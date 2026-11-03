@@ -10,6 +10,9 @@ target/
 # BlueJ files
 *.ctxt
 
+# Application logs
+logs/
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 .DS_Store
