@@ -25,9 +25,14 @@ public class PriceImport {
     private OffsetDateTime finishedAt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private PriceImportStatus status;
 
+    @Column(
+            check = @CheckConstraint(
+                    constraint = "records_imported >= 0"
+            )
+    )
     private Integer recordsImported;
 
     @Column(columnDefinition = "TEXT")
