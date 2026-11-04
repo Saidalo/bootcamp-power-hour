@@ -1,0 +1,277 @@
+/*
+ * PowerHour shared stylesheet.
+ * Every colour the app uses is declared here once. Pages use the classes
+ * below and never invent their own colours or buttons.
+ *
+ * Lives at src/main/resources/static/css/style.css
+ */
+
+:root {
+    --bg: #F4F8FD;
+    --surface: #FFFFFF;
+    --border: #DCE6F2;
+    --text: #0A1B3D;
+    --muted: #5B6B85;
+    --brand: #0E5FCC;
+    --brand-deep: #073A82;
+    --accent: #12E3A8;
+    --accent-fill: #D6FBF0;
+    --accent-ink: #06231A;
+    --success: #0E9F6E;
+    --danger: #E0465B;
+    --bar: #9DB4D4;
+    --bar-off: #E4EBF4;
+
+    --radius: 14px;
+    --radius-pill: 999px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* ---------- header ---------- */
+
+.site-header {
+    background: linear-gradient(120deg, var(--brand-deep) 0%, var(--brand) 100%);
+    color: #fff;
+}
+
+.site-header .inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.site-header .logo {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 19px;
+    color: #fff;
+    text-decoration: none;
+}
+
+.site-header nav { display: flex; gap: 18px; }
+
+.site-header nav a {
+    color: #CFE2FA;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    padding-bottom: 2px;
+}
+
+.site-header nav a:hover { color: #fff; }
+.site-header nav a.current { color: #fff; border-bottom: 2px solid var(--accent); }
+
+.site-header .user {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: #CFE2FA;
+}
+
+.site-header .user a { color: #fff; text-decoration: underline; }
+.site-header .user form { margin: 0; }
+
+.site-header .user button {
+    background: none;
+    border: 0;
+    padding: 0;
+    color: #fff;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ---------- page ---------- */
+
+main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+}
+
+h1 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 28px;
+    line-height: 1.2;
+    margin: 0 0 6px;
+}
+
+h2 {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 19px;
+    margin: 28px 0 10px;
+}
+
+.lead { color: var(--muted); margin: 0 0 24px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* ---------- cards ---------- */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.card.result {
+    background: var(--accent-fill);
+    border-color: var(--accent);
+}
+
+.card.error {
+    background: #FDEDEF;
+    border-color: var(--danger);
+    color: #7A1F2B;
+}
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+
+/* ---------- buttons ---------- */
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-brand   { background: var(--brand);  color: #fff; }
+.btn-ghost   { background: transparent;   color: var(--brand); border-color: var(--border); }
+.btn-danger  { background: var(--danger); color: #fff; }
+
+.btn-small { padding: 6px 14px; font-size: 13px; }
+.btn:disabled, .btn[disabled] { opacity: .5; cursor: default; }
+
+/* ---------- forms ---------- */
+
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.field label { font-size: 13px; font-weight: 500; }
+
+.field input,
+.field select {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+}
+
+.field input:focus,
+.field select:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+.field .hint { font-size: 12px; color: var(--muted); }
+.field .error { font-size: 12px; color: var(--danger); }
+.field input.invalid { border-color: var(--danger); }
+
+/* ---------- tables ---------- */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+th, td {
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 700; }
+tr:last-child td { border-bottom: 0; }
+td.actions { text-align: right; white-space: nowrap; }
+
+.empty { text-align: center; color: var(--muted); padding: 32px 0; }
+
+/* ---------- status chips ---------- */
+
+.chip {
+    display: inline-block;
+    padding: 3px 11px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.chip-planned   { background: var(--accent-fill); color: var(--accent-ink); }
+.chip-completed { background: var(--success);     color: #fff; }
+.chip-canceled  { background: var(--bar-off);     color: var(--muted); }
+
+/* ---------- price chart ---------- */
+
+.chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 150px;
+    padding-top: 8px;
+}
+
+.chart .slot { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.chart .slot .bar { background: var(--bar); border-radius: 4px 4px 0 0; }
+.chart .slot.off .bar { background: var(--bar-off); }
+.chart .slot.chosen .bar { background: var(--accent); }
+
+.chart-axis {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.chart-axis span { flex: 1; text-align: center; }
+
+/* ---------- figures (savings page) ---------- */
+
+.figures { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.figure {
+    flex: 1;
+    min-width: 170px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+}
+
+.figure .label { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+.figure .value { font-family: "Space Grotesk", sans-serif; font-size: 26px; margin-top: 4px; }
+.figure.highlight { background: var(--accent-fill); border-color: var(--accent); }
+
+/* ---------- narrow screens ---------- */
+
+@media (max-width: 640px) {
+    .site-header .inner { flex-wrap: wrap; gap: 12px; }
+    .site-header .user { margin-left: 0; width: 100%; }
+    main { padding: 20px 16px 48px; }
+    .chart { height: 120px; }
+}

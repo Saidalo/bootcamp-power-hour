@@ -1,0 +1,61 @@
+<!--
+  Shared page shell for every PowerHour page.
+  Lives at src/main/resources/templates/fragments/layout.html
+
+  Use it like this in a page:
+
+    <head th:replace="~{fragments/layout :: head('Plan a run')}"></head>
+    <body>
+      <div th:replace="~{fragments/layout :: header('plan')}"></div>
+      <main> ... your page ... </main>
+    </body>
+
+  The argument to header(...) is the nav item to mark as current:
+  appliances, plan, runs, savings or admin.
+-->
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|PowerHour — ${title}|">PowerHour</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+
+<body>
+
+<header class="site-header" th:fragment="header(current)">
+    <div class="inner">
+        <a class="logo" th:href="@{/}">PowerHour</a>
+
+        <nav>
+            <a th:href="@{/appliances}"
+               th:classappend="${current == 'appliances'} ? 'current'">Appliances</a>
+            <a th:href="@{/plan}"
+               th:classappend="${current == 'plan'} ? 'current'">Plan</a>
+            <a th:href="@{/runs}"
+               th:classappend="${current == 'runs'} ? 'current'">My runs</a>
+            <a th:href="@{/savings}"
+               th:classappend="${current == 'savings'} ? 'current'">Savings</a>
+            <a sec:authorize="hasRole('ADMIN')"
+               th:href="@{/admin}"
+               th:classappend="${current == 'admin'} ? 'current'">Admin</a>
+        </nav>
+
+        <div class="user">
+            <span sec:authentication="name">user</span>
+            <form th:action="@{/logout}" method="post">
+                <button type="submit">Log out</button>
+            </form>
+        </div>
+    </div>
+</header>
+
+</body>
+</html>
