@@ -10,7 +10,12 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "planned_runs")
+@Table(
+        name = "planned_runs",
+        check = @CheckConstraint(
+                constraint = "starts_at < ends_at"
+        )
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -20,7 +25,7 @@ public class PlannedRun {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "appliance_id", nullable = false)
     private Appliance appliance;
 

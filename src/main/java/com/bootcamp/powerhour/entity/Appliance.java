@@ -10,7 +10,12 @@ import java.math.BigDecimal;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "appliances")
+@Table(
+        name = "appliances",
+        check = @CheckConstraint(
+                constraint = "allowed_from < allowed_to"
+        )
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -20,7 +25,7 @@ public class Appliance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
