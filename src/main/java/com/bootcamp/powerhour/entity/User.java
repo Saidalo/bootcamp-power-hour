@@ -21,7 +21,7 @@ public class User {
             nullable = false,
             unique = true,
             length = 100,
-            check = @CheckConstraint(constraint = "LENGTH(TRIM(name)) > 0")
+            check = @CheckConstraint(constraint = "LENGTH(TRIM(username)) > 0")
     )
     private String username;
 
