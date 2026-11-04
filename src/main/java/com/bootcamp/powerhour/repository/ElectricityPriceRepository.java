@@ -1,4 +1,4 @@
-package com.bootcamp.powerhour.repositories;
+package com.bootcamp.powerhour.repository;
 
 import com.bootcamp.powerhour.entity.BiddingZone;
 import com.bootcamp.powerhour.entity.ElectricityPrice;

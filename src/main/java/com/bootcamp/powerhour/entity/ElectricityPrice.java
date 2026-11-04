@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "electricity_prices")
+@Table(name = "electricity_prices", uniqueConstraints = @UniqueConstraint(columnNames = {"biddingZone", "startsAt"}))
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -27,6 +27,6 @@ public class ElectricityPrice {
     @Column(nullable = false)
     private OffsetDateTime startsAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 12, scale = 6)
     private BigDecimal priceEurKwh;
 }
