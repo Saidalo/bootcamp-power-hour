@@ -1,4 +1,4 @@
-package com.bootcamp.powerhour.exceptions;
+package com.bootcamp.powerhour.exception;
 
 public class PriceProviderException extends RuntimeException {
     public PriceProviderException(String message) {

@@ -1,4 +1,4 @@
-package com.bootcamp.powerhour.exceptions;
+package com.bootcamp.powerhour.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
