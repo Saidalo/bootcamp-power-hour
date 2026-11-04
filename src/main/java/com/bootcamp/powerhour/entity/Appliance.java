@@ -25,16 +25,28 @@ public class Appliance {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2)
     private BiddingZone biddingZone;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false,
+            length = 100,
+            check = @CheckConstraint(constraint = "LENGTH(TRIM(name)) > 0")
+    )
     private String name;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false,
+            precision = 8,
+            scale = 3,
+            check = @CheckConstraint(constraint = "power_kw > 0")
+    )
     private BigDecimal powerKw;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false,
+            check = @CheckConstraint(constraint = "duration_minutes > 0 AND duration_minutes <= 1440")
+    )
     private Integer durationMinutes;
 
     @Column(nullable = false)

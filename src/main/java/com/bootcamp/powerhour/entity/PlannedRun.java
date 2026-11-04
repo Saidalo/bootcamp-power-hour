@@ -30,10 +30,10 @@ public class PlannedRun {
     @Column(nullable = false)
     private OffsetDateTime endsAt;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 12, scale = 6)
     private BigDecimal estimatedCost;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private PlannedRunStatus status;
 }

@@ -17,17 +17,30 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(
+            nullable = false,
+            unique = true,
+            length = 100,
+            check = @CheckConstraint(constraint = "LENGTH(TRIM(name)) > 0")
+    )
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @Column(nullable = false)
+    @Column(
+            nullable = false,
+            check = @CheckConstraint(constraint = "LENGTH(TRIM(password_hash)) > 0")
+    )
     private String passwordHash;
 
-    @Column(nullable = false, unique = true)
+    @Column(
+            nullable = false,
+            unique = true,
+            length = 100,
+            check = @CheckConstraint(constraint = "LENGTH(TRIM(email)) > 0")
+    )
     private String email;
 
     @Column(nullable = false)

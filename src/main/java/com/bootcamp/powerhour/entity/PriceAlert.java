@@ -25,10 +25,10 @@ public class PriceAlert {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2)
     private BiddingZone biddingZone;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 12, scale = 6)
     private BigDecimal thresholdEurKwh;
 
     @Column(nullable = false)

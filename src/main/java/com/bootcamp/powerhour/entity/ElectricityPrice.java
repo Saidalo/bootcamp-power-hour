@@ -10,7 +10,12 @@ import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "electricity_prices", uniqueConstraints = @UniqueConstraint(columnNames = {"biddingZone", "startsAt"}))
+@Table(
+        name = "electricity_prices",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"bidding_zone", "starts_at"}
+        )
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -21,7 +26,7 @@ public class ElectricityPrice {
     private long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 2)
     private BiddingZone biddingZone;
 
     @Column(nullable = false)
