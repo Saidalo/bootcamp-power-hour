@@ -10,30 +10,30 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.*;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import static java.lang.Thread.sleep;
-
 @Component
 public class EleringPriceProvider implements PriceProvider {
+    private static final BigDecimal KWH_PER_MWH = BigDecimal.valueOf(1000);
     private static final Logger log = LoggerFactory.getLogger(EleringPriceProvider.class);
     private static final ZoneId BALTIC_ZONE = ZoneId.of("Europe/Tallinn");
     private final RestClient restClient;
     private final int maxAttempts;
     private final long retryDelayMs;
 
-    public EleringPriceProvider (@Qualifier("eleringRestClient") RestClient restClient, @Value("${elering.max-attempts}") int maxAttempts, @Value("${elering.retry-delay-ms") long retryDelayMs){
+    public EleringPriceProvider (@Qualifier("eleringRestClient") RestClient restClient, @Value("${elering.max-attempts}") int maxAttempts, @Value("${elering.retry-delay-ms}") long retryDelayMs){
         this.restClient = restClient;
         this.maxAttempts = maxAttempts;
         this.retryDelayMs = retryDelayMs;
     }
 
     @Override
-    public List<HourlyPricePoint> fetchDayAhead(BiddingZone zone, LocalDate date){
+    public List<PricePoint> fetchDayAhead(BiddingZone zone, LocalDate date){
         Instant start = date.atStartOfDay(BALTIC_ZONE).toInstant();
         Instant end = date.plusDays(1).atStartOfDay(BALTIC_ZONE).toInstant();
 
@@ -42,16 +42,19 @@ public class EleringPriceProvider implements PriceProvider {
             throw new PriceProviderException("Elering returned an unsuccessful response for " + zone + " " + date);
         }
 
-        List<EleringResponse.PricePoint> zonePoints = response.data()
+        return response.data()
                 .getOrDefault(zone.name().toLowerCase(Locale.ROOT), List.of())
                 .stream()
+                .filter(p -> p.price() != null)
                 .filter(p -> {
                     Instant time = Instant.ofEpochSecond(p.timestamp());
                     return !time.isBefore(start) && time.isBefore(end);
                 })
+                .sorted(Comparator.comparingLong(EleringResponse.EleringPrice::timestamp))
+                .map(p -> new PricePoint (
+                        OffsetDateTime.ofInstant(Instant.ofEpochSecond(p.timestamp()), ZoneOffset.UTC),
+                        p.price().divide(KWH_PER_MWH, 6, RoundingMode.HALF_UP)))
                 .toList();
-
-        return HourlyPriceAggregator.toHourly(zonePoints);
     }
 
     private EleringResponse callWithRetry (Instant start, Instant end){

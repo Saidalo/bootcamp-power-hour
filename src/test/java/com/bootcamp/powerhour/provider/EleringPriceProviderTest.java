@@ -34,7 +34,7 @@ public class EleringPriceProviderTest {
     }
 
     @Test
-    void mapsZonePricesAveragesQuarterHoursAndConvertsToKwh() {
+    void mapsZonePricesPer15MinutesAndConvertsToKwh() {
         String json = """
                 {"success": true, "data": {
                   "ee": [
@@ -56,12 +56,13 @@ public class EleringPriceProviderTest {
         server.expect(requestTo(startsWith(URL)))
                 .andRespond(withSuccess(json, MediaType.APPLICATION_JSON));
 
-        List<HourlyPricePoint> result = provider.fetchDayAhead(BiddingZone.EE, LocalDate.of(2026, 11, 4));
+        List<PricePoint> result = provider.fetchDayAhead(BiddingZone.EE, LocalDate.of(2026, 11, 4));
 
-        assertThat(result).hasSize(2);
+        assertThat(result).hasSize(5);
         assertThat(result.get(0).startsAt().toInstant()).isEqualTo(Instant.ofEpochSecond(DAY_START));
-        assertThat(result.get(0).priceEurKwh()).isEqualByComparingTo("0.025");
-        assertThat(result.get(1).priceEurKwh()).isEqualByComparingTo("0.050");
+        assertThat(result.get(0).priceEurKwh()).isEqualByComparingTo("0.010");
+        assertThat(result.get(1).startsAt().toInstant()).isEqualTo(Instant.ofEpochSecond(DAY_START + 900));
+        assertThat(result.get(4).priceEurKwh()).isEqualByComparingTo("0.050");
         server.verify();
     }
 
