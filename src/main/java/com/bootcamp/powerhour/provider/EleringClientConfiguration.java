@@ -11,7 +11,7 @@ import java.time.Duration;
 @Configuration
 public class EleringClientConfiguration {
     @Bean
-    public RestClient eleringRestClient(@Value("${elering.base-url") String baseUrl, @Value("${elering.connect-timeout-ms") long connectTimeoutMs, @Value("${elering.read-timeout-ms") long readTimeoutMs) {
+    public RestClient eleringRestClient(@Value("${elering.base-url}") String baseUrl, @Value("${elering.connect-timeout-ms}") long connectTimeoutMs, @Value("${elering.read-timeout-ms}") long readTimeoutMs) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
         requestFactory.setReadTimeout(Duration.ofMillis(readTimeoutMs));

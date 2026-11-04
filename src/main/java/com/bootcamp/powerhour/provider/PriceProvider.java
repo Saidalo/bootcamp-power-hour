@@ -6,5 +6,5 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface PriceProvider {
-    List<HourlyPricePoint> fetchDayAhead(BiddingZone zone, LocalDate date);
+    List<PricePoint> fetchDayAhead(BiddingZone zone, LocalDate date);
 }
