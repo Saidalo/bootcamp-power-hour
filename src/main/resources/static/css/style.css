@@ -275,3 +275,21 @@ td.actions { text-align: right; white-space: nowrap; }
     main { padding: 20px 16px 48px; }
     .chart { height: 120px; }
 }
+
+/* ---------- sign in / register ---------- */
+
+.auth { max-width: 380px; margin: 48px auto; }
+.auth .logo-big { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 26px; color: var(--brand); text-align: center; margin-bottom: 18px; }
+.auth .btn { width: 100%; }
+.auth .switch { text-align: center; margin-top: 14px; font-size: 14px; }
+.form-error { color: var(--danger); font-weight: 500; margin: 0 0 14px; }
+
+a { color: var(--brand); }
+
+/* ---------- toolbars and extra chips ---------- */
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.toolbar h1 { margin: 0; }
+td.actions form { display: inline; margin-left: 6px; }
+.chip-failed  { background: var(--danger); color: #fff; }
+.chip-running { background: var(--bar-off); color: var(--muted); }

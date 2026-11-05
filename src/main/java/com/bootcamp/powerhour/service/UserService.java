@@ -41,7 +41,7 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
         user.setActive(true);
-
+        user.setBiddingZone(request.getBiddingZone());
         User savedUser = userRepository.save(user);
         return mapToResponse(savedUser);
     }

@@ -32,7 +32,7 @@
                 <select id="applianceId" name="applianceId">
                     <option th:each="a : ${appliances}"
                             th:value="${a.id}"
-                            th:text="|${a.name} — ${a.powerKw} kW, ${a.durationMinutes} min|"
+                            th:text="|${a.name} — ${a.powerKw.stripTrailingZeros().toPlainString()} kW, ${a.durationMinutes} min|"
                             th:selected="${a.id == selectedId}">Dishwasher</option>
                 </select>
             </div>
@@ -52,7 +52,7 @@
     </div>
 
     <div class="card" th:if="${slots != null and !slots.isEmpty()}">
-        <h2>Prices</h2>
+        <h2 style="margin-top:0">Prices</h2>
 
         <div class="chart">
             <div th:each="s : ${slots}"
@@ -76,16 +76,14 @@
 
     <div class="card result" th:if="${window != null}">
         <h2 style="margin-top:0"
-            th:text="|Start at ${#temporals.format(window.startsAt, 'HH:mm')},
-                      finish ${#temporals.format(window.endsAt, 'HH:mm')}
-                      — estimated ${window.estimatedCost} €|">
-            Start at 02:00, finish 05:00 — estimated 0.28 €
+            th:text="|Start at ${startLabel}, finish ${endLabel}. Estimated ${costLabel} €|">
+            Start at 02:00, finish 03:30. Estimated 0.12 €
         </h2>
-        <p class="small muted" th:text="|${window.energyKwh} kWh|">6.3 kWh</p>
+        <p class="small muted" th:text="|${durationLabel} · ${energyLabel} kWh|">1h 30min · 3.3 kWh</p>
 
         <form th:action="@{/plan}" method="post">
             <input type="hidden" name="applianceId" th:value="${selectedId}">
-            <input type="hidden" name="startsAt" th:value="${window.startsAt}">
+            <input type="hidden" name="day" th:value="${day}">
             <button type="submit" class="btn btn-primary">Plan this run</button>
         </form>
     </div>

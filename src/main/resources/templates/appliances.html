@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Appliances')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header('appliances')}"></div>
+<main>
+  <div th:if="${!appliances.isEmpty()}">
+    <div class="toolbar">
+      <h1>Appliances</h1>
+      <a class="btn btn-primary" th:href="@{/appliances/new}">Add appliance</a>
+    </div>
+
+    <table>
+      <thead>
+      <tr><th>Name</th><th>Power</th><th>Duration</th><th>Allowed window</th><th></th></tr>
+      </thead>
+      <tbody>
+      <tr th:each="a : ${appliances}">
+        <td th:text="${a.name}">Dishwasher</td>
+        <td th:text="|${a.powerKw.stripTrailingZeros().toPlainString()} kW|">2.2 kW</td>
+        <td th:text="|${a.durationMinutes} min|">90 min</td>
+        <td th:text="|${#temporals.format(a.allowedFrom, 'HH:mm')}–${#temporals.format(a.allowedTo, 'HH:mm')}|">00:00–07:00</td>
+        <td class="actions">
+          <a class="btn btn-ghost btn-small" th:href="@{/appliances/{id}/edit(id=${a.id})}">Edit</a>
+          <form th:action="@{/appliances/{id}/delete(id=${a.id})}" method="post"
+                onsubmit="return confirm('Delete this appliance and its planned runs?')">
+            <button type="submit" class="btn btn-danger btn-small">Delete</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="empty" th:if="${appliances.isEmpty()}">
+    <p>No appliances yet</p>
+    <a class="btn btn-primary" th:href="@{/appliances/new}">Add appliance</a>
+  </div>
+</main>
+</body>
+</html>
