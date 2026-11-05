@@ -8,4 +8,5 @@ import java.util.List;
 
 public interface ElectricityPriceRepository extends JpaRepository<ElectricityPrice, Long> {
     List<ElectricityPrice> findByBiddingZoneAndStartsAtBetween(BiddingZone biddingZone, OffsetDateTime from, OffsetDateTime to);
+    boolean existsByBiddingZoneAndStartsAt (BiddingZone biddingZone, OffsetDateTime startsAt);
 }
