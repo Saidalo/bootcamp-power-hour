@@ -118,14 +118,14 @@ public class CheapestWindowService {
             return true;
         }
         for (OffsetDateTime moment = startsAt; moment.isBefore(endsAt); moment = moment.plusMinutes(1)) {
-            if (!isAllowedTime(moment.toLocalTime(), allowedFrom, allowedTo)) {
+            if (!isAllowedTime(moment.atZoneSameInstant(PowerHourTime.ZONE).toLocalTime(), allowedFrom, allowedTo)) {
                 return false;
             }
         }
         return true;
     }
 
-    private boolean isAllowedTime(LocalTime moment, LocalTime allowedFrom, LocalTime allowedTo) {
+    public static boolean isAllowedTime(LocalTime moment, LocalTime allowedFrom, LocalTime allowedTo) {
         if (allowedFrom.isBefore(allowedTo)) {
             return !moment.isBefore(allowedFrom) && moment.isBefore(allowedTo);
         }

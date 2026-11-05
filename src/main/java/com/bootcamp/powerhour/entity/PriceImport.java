@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -21,6 +22,12 @@ public class PriceImport {
 
     @Column(nullable = false)
     private OffsetDateTime startedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 2)
+    private BiddingZone biddingZone;
+
+    private LocalDate priceDate;
 
     private OffsetDateTime finishedAt;
 

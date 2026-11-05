@@ -45,4 +45,8 @@ public class User {
 
     @Column(nullable = false)
     private boolean isActive;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 2)
+    private BiddingZone biddingZone;
 }

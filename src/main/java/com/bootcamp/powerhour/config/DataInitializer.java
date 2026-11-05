@@ -1,5 +1,6 @@
 package com.bootcamp.powerhour.config;
 
+import com.bootcamp.powerhour.entity.BiddingZone;
 import com.bootcamp.powerhour.entity.Role;
 import com.bootcamp.powerhour.entity.User;
 import com.bootcamp.powerhour.repository.UserRepository;
@@ -34,6 +35,7 @@ public class DataInitializer {
         user.setPasswordHash(passwordHash);
         user.setRole(role);
         user.setActive(true);
+        user.setBiddingZone(BiddingZone.LV);
         return user;
     }
 }

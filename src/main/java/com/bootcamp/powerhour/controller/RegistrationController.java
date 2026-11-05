@@ -1,6 +1,7 @@
 package com.bootcamp.powerhour.controller;
 
 import com.bootcamp.powerhour.dto.RegisterRequest;
+import com.bootcamp.powerhour.entity.BiddingZone;
 import com.bootcamp.powerhour.exception.UserAlreadyExistsException;
 import com.bootcamp.powerhour.service.UserService;
 import jakarta.validation.Valid;
@@ -39,5 +40,10 @@ public class RegistrationController {
         }
 
         return "redirect:/login?registered";
+    }
+
+    @ModelAttribute("zones")
+    public BiddingZone[] zones() {
+        return new BiddingZone[]{BiddingZone.LT, BiddingZone.LV, BiddingZone.EE};
     }
 }

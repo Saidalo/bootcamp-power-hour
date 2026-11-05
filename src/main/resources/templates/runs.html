@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My runs')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header('runs')}"></div>
+<main>
+    <h1>My runs</h1>
+
+    <table th:if="${!runs.isEmpty()}">
+        <thead>
+        <tr><th>Appliance</th><th>When</th><th>Cost</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="r : ${runs}">
+            <td th:text="${r.applianceName}">Dishwasher</td>
+            <td th:text="${r.when}">Thu 5 Nov, 02:00–03:30</td>
+            <td th:text="|${r.cost} €|">0.12 €</td>
+            <td>
+                <span class="chip"
+                      th:classappend="${r.status.name() == 'PLANNED'} ? 'chip-planned' : (${r.status.name() == 'COMPLETED'} ? 'chip-completed' : 'chip-canceled')"
+                      th:text="${r.status}">PLANNED</span>
+            </td>
+            <td class="actions">
+                <th:block th:if="${r.status.name() == 'PLANNED'}">
+                    <form th:action="@{/runs/{id}/complete(id=${r.id})}" method="post">
+                        <button type="submit" class="btn btn-brand btn-small">Mark completed</button>
+                    </form>
+                    <form th:action="@{/runs/{id}/cancel(id=${r.id})}" method="post">
+                        <button type="submit" class="btn btn-danger btn-small">Cancel</button>
+                    </form>
+                </th:block>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="empty" th:if="${runs.isEmpty()}">
+        <p>No runs yet</p>
+        <a class="btn btn-ghost" th:href="@{/plan}">Plan a run</a>
+    </div>
+</main>
+</body>
+</html>

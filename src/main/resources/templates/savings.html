@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Savings')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header('savings')}"></div>
+<main>
+  <h1>Savings</h1>
+
+  <form th:action="@{/savings}" method="get" class="row" style="margin-bottom:12px">
+    <div class="field">
+      <label for="month">Month</label>
+      <input id="month" name="month" type="month" th:value="${month}">
+    </div>
+    <div class="field">
+      <button type="submit" class="btn btn-ghost">Show</button>
+    </div>
+  </form>
+
+  <div class="figures">
+    <div class="figure">
+      <div class="label">You paid</div>
+      <div class="value" th:text="|${summary.paid} €|">1.20 €</div>
+    </div>
+    <div class="figure">
+      <div class="label">At the average price</div>
+      <div class="value" th:text="|${summary.atAverage} €|">1.80 €</div>
+    </div>
+    <div class="figure">
+      <div class="label">At the peak price</div>
+      <div class="value" th:text="|${summary.atPeak} €|">3.10 €</div>
+    </div>
+    <div class="figure highlight">
+      <div class="label">Saved</div>
+      <div class="value" th:text="|${summary.saved} €|">0.60 €</div>
+    </div>
+  </div>
+
+  <p class="small" style="margin-top:14px"
+     th:text="|${summary.completedRuns} completed runs · ${summary.energyKwh} kWh|">4 completed runs · 13.2 kWh</p>
+  <p class="small muted" th:if="${summary.runsWithoutPrices > 0}"
+     th:text="|${summary.runsWithoutPrices} runs not included – no prices imported for those days.|">
+    1 runs not included – no prices imported for those days.
+  </p>
+</main>
+</body>
+</html>

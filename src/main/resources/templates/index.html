@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Home')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header('home')}"></div>
+<main>
+    <p class="headline" th:if="${cheapestTime != null}"
+       th:text="|Cheapest hour today: ${cheapestTime}, ${cheapestPrice} €/kWh|">
+        Cheapest hour today: 03:00, 0.0340 €/kWh
+    </p>
+    <p class="headline" th:if="${cheapestTime == null}">No prices for today yet.</p>
+
+    <div class="home-grid">
+        <div class="card">
+            <h2 style="margin-top:0">Today's prices</h2>
+            <div th:if="${!slots.isEmpty()}">
+                <div class="chart">
+                    <div th:each="s : ${slots}" class="slot" th:title="|${s.time} — ${s.price} €/kWh|">
+                        <div class="bar" th:style="|height:${s.heightPercent}%|"></div>
+                    </div>
+                </div>
+                <div class="chart-axis">
+                    <span th:each="s : ${slots}" th:text="${s.hourLabel}">00</span>
+                </div>
+            </div>
+            <p class="muted" th:if="${slots.isEmpty()}">Nothing to show yet.</p>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-top:0">Next planned run</h2>
+            <div th:if="${nextRun != null}">
+                <p style="margin:0;font-weight:700" th:text="${nextRun.applianceName}">Dishwasher</p>
+                <p style="margin:4px 0" th:text="${nextRun.when}">Thu 5 Nov, 02:00–03:30</p>
+                <p class="muted" style="margin:0" th:text="|${nextRun.cost} €|">0.12 €</p>
+            </div>
+            <div th:if="${nextRun == null}">
+                <p class="muted">Nothing planned</p>
+                <a class="btn btn-primary" th:href="@{/plan}">Plan a run</a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

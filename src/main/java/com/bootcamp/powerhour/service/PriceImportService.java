@@ -25,64 +25,90 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+// Imports one day of prices for one or all zones and records the attempt in price_imports.
 @Slf4j
 @Service
 public class PriceImportService {
     private final PriceProvider priceProvider;
-    private final PriceImportRepository importRepository;
     private final ElectricityPriceRepository priceRepository;
-    private final TransactionTemplate transactionalTemplate;
+    private final PriceImportRepository importRepository;
+    private final TransactionTemplate transactionTemplate;
 
-    public PriceImportService(PriceProvider priceProvider, PriceImportRepository importRepository, ElectricityPriceRepository priceRepository, PlatformTransactionManager transactionManager){
+    public PriceImportService(PriceProvider priceProvider,
+                              ElectricityPriceRepository priceRepository,
+                              PriceImportRepository importRepository,
+                              PlatformTransactionManager transactionManager) {
         this.priceProvider = priceProvider;
-        this.importRepository = importRepository;
         this.priceRepository = priceRepository;
-        this.transactionalTemplate = new TransactionTemplate(transactionManager);
+        this.importRepository = importRepository;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    private PriceImport runImport (List<BiddingZone> zones, LocalDate date){
+    public PriceImport importAllZones(LocalDate date) {
+        return runImport(List.of(BiddingZone.values()), date);
+    }
+
+    public PriceImport importZone(String zoneCode, LocalDate date) {
+        return runImport(List.of(parseZone(zoneCode)), date);
+    }
+
+    // Used by the admin page's Re-import button
+    public PriceImport importDay(BiddingZone zone, LocalDate date) {
+        return runImport(List.of(zone), date);
+    }
+
+    public List<PriceImport> history() {
+        return importRepository.findTop50ByOrderByStartedAtDesc();
+    }
+
+    private PriceImport runImport(List<BiddingZone> zones, LocalDate date) {
         PriceImport priceImport = new PriceImport();
         priceImport.setStartedAt(OffsetDateTime.now());
         priceImport.setStatus(PriceImportStatus.RUNNING);
         priceImport.setRecordsImported(0);
+        priceImport.setPriceDate(date);
+        // one zone -> show it in the admin table; all zones -> leave empty
+        priceImport.setBiddingZone(zones.size() == 1 ? zones.get(0) : null);
         priceImport = importRepository.save(priceImport);
+
         int sum = 0;
-        List <String> errors = new ArrayList<>();
-        for (BiddingZone zone : zones){
+        List<String> errors = new ArrayList<>();
+        for (BiddingZone zone : zones) {
             try {
                 List<PricePoint> points = priceProvider.fetchDayAhead(zone, date);
                 if (points.isEmpty()) {
                     throw new PriceProviderException("No prices published yet");
                 }
-                Integer saved = transactionalTemplate.execute(status -> savePrices(zone, points));
+                Integer saved = transactionTemplate.execute(status -> savePrices(zone, points));
                 sum += saved == null ? 0 : saved;
                 log.info("Imported {} prices for {} {}", saved, zone, date);
-            } catch (RuntimeException e){
-                log.warn("Price import failed for {} {} : {}", zone, date, e.getMessage());
+            } catch (RuntimeException e) {
+                log.warn("Price import failed for {} {}: {}", zone, date, e.getMessage());
                 errors.add(zone + ": " + e.getMessage());
             }
         }
+
         priceImport.setRecordsImported(sum);
         priceImport.setFinishedAt(OffsetDateTime.now());
         priceImport.setStatus(errors.isEmpty() ? PriceImportStatus.SUCCESS : PriceImportStatus.FAILED);
         priceImport.setErrorMessage(errors.isEmpty() ? null : String.join("; ", errors));
         return importRepository.save(priceImport);
-
     }
 
-    private int savePrices (BiddingZone zone, List<PricePoint> points){
+    // Updates prices that already exist and inserts new ones (no duplicates thanks to the unique constraint)
+    private int savePrices(BiddingZone zone, List<PricePoint> points) {
         OffsetDateTime from = points.get(0).startsAt();
         OffsetDateTime to = points.get(points.size() - 1).startsAt();
 
         Map<Instant, ElectricityPrice> existing = priceRepository
                 .findByBiddingZoneAndStartsAtBetween(zone, from, to)
                 .stream()
-                .collect(Collectors.toMap(p ->
-                p.getStartsAt().toInstant(), Function.identity()));
+                .collect(Collectors.toMap(p -> p.getStartsAt().toInstant(), Function.identity()));
+
         List<ElectricityPrice> toSave = new ArrayList<>();
-        for (PricePoint point : points){
+        for (PricePoint point : points) {
             ElectricityPrice price = existing.get(point.startsAt().toInstant());
-            if (price == null){
+            if (price == null) {
                 price = new ElectricityPrice();
                 price.setBiddingZone(zone);
                 price.setStartsAt(point.startsAt());
@@ -94,19 +120,11 @@ public class PriceImportService {
         return toSave.size();
     }
 
-    private static BiddingZone parseZone(String code){
+    private static BiddingZone parseZone(String code) {
         try {
             return BiddingZone.valueOf(code.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new ZoneNotFoundException(code);
         }
-    }
-
-    public PriceImport importAllZones (LocalDate date){
-        return runImport(List.of(BiddingZone.values()), date);
-    }
-
-    public PriceImport importZone (String zoneCode, LocalDate date){
-        return runImport(List.of(parseZone(zoneCode)), date);
     }
 }

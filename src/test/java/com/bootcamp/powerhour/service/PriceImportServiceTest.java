@@ -58,7 +58,7 @@ public class PriceImportServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new PriceImportService(priceProvider, importRepository, priceRepository, transactionManager);
+        service = new PriceImportService(priceProvider, priceRepository, importRepository, transactionManager);
         lenient().when(importRepository.save(any(PriceImport.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
