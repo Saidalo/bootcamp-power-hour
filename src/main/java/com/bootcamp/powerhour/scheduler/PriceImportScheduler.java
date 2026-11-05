@@ -29,9 +29,13 @@ public class PriceImportScheduler {
         this.clock = clock;
     }
 
-    @Scheduled(cron = "${elering.import-cron:0 0 14 * * *}", zone = "Europe/Tallinn")
+    @Scheduled(cron = "${elering.import-cron:0 0/15 14-16 * * *}", zone = "Europe/Tallinn")
     public void importTomorrowPrices(){
         LocalDate tomorrow = LocalDate.now(clock).plusDays(1);
+        if (priceImportService.hasPrices(tomorrow)) {
+            log.debug("Prices for {} already imported, skipping", tomorrow);
+            return;
+        }
         log.info("Scheduled price import for {} started", tomorrow);
         PriceImport result = priceImportService.importAllZones(tomorrow);
         log.info("Scheduled price import for {} finished: {}, {} records", tomorrow, result.getStatus(), result.getRecordsImported());

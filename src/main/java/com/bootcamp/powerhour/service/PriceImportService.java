@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -126,5 +127,17 @@ public class PriceImportService {
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new ZoneNotFoundException(code);
         }
+    }
+
+    public boolean hasPrices(LocalDate date) {
+        ZoneId zone = ZoneId.of("Europe/Tallinn");
+        OffsetDateTime from = date.atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime to = date.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+        for (BiddingZone biddingZone : BiddingZone.values()) {
+            if (!priceRepository.existsByBiddingZoneAndStartsAtGreaterThanEqualAndStartsAtLessThan(biddingZone, from, to)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
