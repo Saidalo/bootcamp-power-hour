@@ -17,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 public class CheapestWindowServiceTest {
 
     private static final OffsetDateTime DAY_START =
-            OffsetDateTime.of(2026, 11, 5, 0, 0, 0, 0, ZoneOffset.UTC);
+            ZonedDateTime.of(2026, 11, 5, 0, 0, 0, 0, PowerHourTime.ZONE).toOffsetDateTime();
 
     @Mock
     private ElectricityPriceRepository electricityPriceRepository;

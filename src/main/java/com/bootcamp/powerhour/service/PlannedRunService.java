@@ -30,6 +30,8 @@ public class PlannedRunService {
         run.setStartsAt(window.startsAt());
         run.setEndsAt(window.endsAt());
         run.setEstimatedCost(window.estimatedCost());
+        run.setEnergyKwh(window.energyKwh());
+        run.setBiddingZone(appliance.getBiddingZone());
         run.setStatus(PlannedRunStatus.PLANNED);
         PlannedRun saved = plannedRunRepository.save(run);
         log.info("Run planned: id={} appliance={} start={}", saved.getId(), appliance.getId(), window.startsAt());
