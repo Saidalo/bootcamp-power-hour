@@ -33,7 +33,7 @@
       <td th:text="${i.rows}">24</td>
       <td>
                 <span class="chip"
-                      th:classappend="${i.status.name() == 'SUCCESS'} ? 'chip-completed' : (${i.status.name() == 'FAILED'} ? 'chip-failed' : 'chip-running')"
+                      th:classappend="${i.status.name() == 'SUCCESS'} ? 'chip-completed' : (${i.status.name() == 'FAILED'} ? 'chip-failed' : (${i.status.name() == 'NOT_PUBLISHED'} ? 'chip-planned' : 'chip-running'))"
                       th:text="${i.status}" th:title="${i.errorMessage}">SUCCESS</span>
       </td>
     </tr>
