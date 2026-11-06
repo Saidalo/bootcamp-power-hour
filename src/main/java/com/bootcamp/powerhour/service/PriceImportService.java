@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -73,11 +74,14 @@ public class PriceImportService {
 
         int sum = 0;
         List<String> errors = new ArrayList<>();
+        List<BiddingZone> notPublished = new ArrayList<>();
         for (BiddingZone zone : zones) {
             try {
                 List<PricePoint> points = priceProvider.fetchDayAhead(zone, date);
                 if (points.isEmpty()) {
-                    throw new PriceProviderException("No prices published yet");
+                    log.info("Prices for {} {} not published yet", zone, date);
+                    notPublished.add(zone);
+                    continue;
                 }
                 Integer saved = transactionTemplate.execute(status -> savePrices(zone, points));
                 sum += saved == null ? 0 : saved;
@@ -90,8 +94,8 @@ public class PriceImportService {
 
         priceImport.setRecordsImported(sum);
         priceImport.setFinishedAt(OffsetDateTime.now());
-        priceImport.setStatus(errors.isEmpty() ? PriceImportStatus.SUCCESS : PriceImportStatus.FAILED);
-        priceImport.setErrorMessage(errors.isEmpty() ? null : String.join("; ", errors));
+        priceImport.setStatus(resolveStatus(errors, notPublished));
+        priceImport.setErrorMessage(buildMessage(errors, notPublished));
         return importRepository.save(priceImport);
     }
 
@@ -126,5 +130,35 @@ public class PriceImportService {
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new ZoneNotFoundException(code);
         }
+    }
+
+    public boolean hasPrices(LocalDate date) {
+        ZoneId zone = ZoneId.of("Europe/Tallinn");
+        OffsetDateTime from = date.atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime to = date.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+        for (BiddingZone biddingZone : BiddingZone.values()) {
+            if (!priceRepository.existsByBiddingZoneAndStartsAtGreaterThanEqualAndStartsAtLessThan(biddingZone, from, to)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static PriceImportStatus resolveStatus(List<String> errors, List<BiddingZone> notPublished){
+        if (!errors.isEmpty()){
+            return PriceImportStatus.FAILED;
+        }
+        if (!notPublished.isEmpty()){
+            return PriceImportStatus.NOT_PUBLISHED;
+        }
+        return PriceImportStatus.SUCCESS;
+    }
+
+    private static String buildMessage(List<String> errors, List<BiddingZone> notPublished){
+        List <String> parts = new ArrayList<>(errors);
+        if (!notPublished.isEmpty()){
+            parts.add("Not published yet: " + notPublished);
+        }
+        return parts.isEmpty() ? null : String.join("; ", parts);
     }
 }
