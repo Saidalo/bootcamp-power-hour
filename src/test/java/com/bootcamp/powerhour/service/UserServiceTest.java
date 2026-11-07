@@ -40,8 +40,8 @@ class UserServiceTest {
 
     @Test
     void register_shouldSaveUserWithHashedPasswordAndUserRole() {
-        when(userRepository.existsByUsername("anna")).thenReturn(false);
-        when(userRepository.existsByEmail("anna@example.com")).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase("anna")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("anna@example.com")).thenReturn(false);
         when(passwordEncoder.encode("password123")).thenReturn("$2a$10$hash");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
             User user = invocation.getArgument(0);
@@ -64,7 +64,7 @@ class UserServiceTest {
 
     @Test
     void register_shouldThrowWhenUsernameExists() {
-        when(userRepository.existsByUsername("anna")).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase("anna")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.register(createRequest()))
                 .isInstanceOf(UserAlreadyExistsException.class)
@@ -75,13 +75,30 @@ class UserServiceTest {
 
     @Test
     void register_shouldThrowWhenEmailExists() {
-        when(userRepository.existsByUsername("anna")).thenReturn(false);
-        when(userRepository.existsByEmail("anna@example.com")).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase("anna")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("anna@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.register(createRequest()))
                 .isInstanceOf(UserAlreadyExistsException.class)
                 .hasMessageContaining("anna@example.com");
 
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void register_shouldKeepUsernameCaseAndStoreEmailInLowerCase() {
+        RegisterRequest request = createRequest();
+        request.setUsername(" Anna ");
+        request.setEmail(" Anna@Example.COM ");
+        when(userRepository.existsByUsernameIgnoreCase("Anna")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("anna@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        userService.register(request);
+
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().getUsername()).isEqualTo("Anna");
+        assertThat(captor.getValue().getEmail()).isEqualTo("anna@example.com");
     }
 }
