@@ -27,4 +27,12 @@ public class RegisterRequest {
 
     @NotNull(message = "Choose your bidding zone")
     private BiddingZone biddingZone;
+
+    public void setUsername(String username) {
+        this.username = username == null ? null : username.trim();
+    }
+
+    public void setEmail(String email) {
+        this.email = email == null ? null : email.trim().toLowerCase();
+    }
 }
