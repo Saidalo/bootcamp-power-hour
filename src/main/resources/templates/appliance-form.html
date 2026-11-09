@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${applianceId == null} ? 'Add appliance' : 'Edit appliance')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header('appliances')}"></div>
+<main>
+    <h1 th:text="${applianceId == null} ? 'Add appliance' : 'Edit appliance'">Add appliance</h1>
+
+    <div class="card" style="max-width:460px">
+        <form th:action="${applianceId == null} ? @{/appliances} : @{/appliances/{id}(id=${applianceId})}"
+              th:object="${form}" method="post" novalidate>
+            <div class="field">
+                <label for="name">Name</label>
+                <input id="name" th:field="*{name}" type="text" th:errorclass="invalid">
+                <span class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></span>
+            </div>
+            <div class="field">
+                <label for="powerKw">Power in kW</label>
+                <input id="powerKw" th:field="*{powerKw}" type="number" step="0.001" min="0" th:errorclass="invalid">
+                <span class="hint">Usually 2–2.5 kW for a dishwasher – it's on the rating label.</span>
+                <span class="error" th:if="${#fields.hasErrors('powerKw')}" th:errors="*{powerKw}"></span>
+            </div>
+            <div class="field">
+                <label for="durationMinutes">Duration in minutes</label>
+                <input id="durationMinutes" th:field="*{durationMinutes}" type="number" min="1" max="1440" th:errorclass="invalid">
+                <span class="error" th:if="${#fields.hasErrors('durationMinutes')}" th:errors="*{durationMinutes}"></span>
+            </div>
+            <div class="field">
+                <label for="allowedFrom">Allowed from</label>
+                <input id="allowedFrom" th:field="*{allowedFrom}" type="time" th:errorclass="invalid">
+                <span class="error" th:if="${#fields.hasErrors('allowedFrom')}" th:errors="*{allowedFrom}"></span>
+            </div>
+            <div class="field">
+                <label for="allowedTo">Allowed to</label>
+                <input id="allowedTo" th:field="*{allowedTo}" type="time" th:errorclass="invalid">
+                <span class="error" th:if="${#fields.hasErrors('allowedTo')}" th:errors="*{allowedTo}"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a class="btn btn-ghost" th:href="@{/appliances}">Cancel</a>
+        </form>
+    </div>
+</main>
+</body>
+</html>

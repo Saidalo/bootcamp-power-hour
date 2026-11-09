@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Admin')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: header('admin')}"></div>
+<main>
+  <h1>Admin</h1>
+  <div class="card error" th:if="${error != null}"><p style="margin:0" th:text="${error}">Error</p></div>
+
+  <h2>Import history</h2>
+  <form th:action="@{/admin/imports}" method="post" class="row">
+    <div class="field">
+      <label for="date">Date</label>
+      <input id="date" name="date" type="date" th:value="${today}" required>
+    </div>
+    <div class="field">
+      <label for="zone">Zone</label>
+      <select id="zone" name="zone">
+        <option th:each="z : ${zones}" th:value="${z}" th:text="${z}">LV</option>
+      </select>
+    </div>
+    <div class="field">
+      <button type="submit" class="btn btn-brand">Re-import</button>
+    </div>
+  </form>
+
+  <table th:if="${!imports.isEmpty()}">
+    <thead><tr><th>When</th><th>Zone</th><th>Rows</th><th>Status</th></tr></thead>
+    <tbody>
+    <tr th:each="i : ${imports}">
+      <td th:text="${i.when}">Thu 5 Nov, 07:30</td>
+      <td th:text="${i.zone}">LV · 2026-11-05</td>
+      <td th:text="${i.rows}">24</td>
+      <td>
+                <span class="chip"
+                      th:classappend="${i.status.name() == 'SUCCESS'} ? 'chip-completed' : (${i.status.name() == 'FAILED'} ? 'chip-failed' : (${i.status.name() == 'NOT_PUBLISHED'} ? 'chip-planned' : 'chip-running'))"
+                      th:text="${i.status}" th:title="${i.errorMessage}">SUCCESS</span>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+  <p class="muted" th:if="${imports.isEmpty()}">No imports yet.</p>
+
+  <h2>Users</h2>
+  <table>
+    <thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Active</th><th></th></tr></thead>
+    <tbody>
+    <tr th:each="u : ${users}">
+      <td th:text="${u.username}">user</td>
+      <td th:text="${u.email}">user@powerhour.lv</td>
+      <td th:text="${u.role}">USER</td>
+      <td th:text="${u.active} ? 'Yes' : 'No'">Yes</td>
+      <td class="actions">
+        <form th:if="${u.active and u.username != #authentication.name}"
+              th:action="@{/admin/users/{id}/deactivate(id=${u.id})}" method="post">
+          <button type="submit" class="btn btn-danger btn-small">Deactivate</button>
+        </form>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

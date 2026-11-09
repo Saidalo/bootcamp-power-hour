@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Sign in')}"></head>
+<body>
+<main>
+    <div class="card auth">
+        <div class="logo-big">PowerHour</div>
+
+        <p class="form-error" th:if="${param.error}">Wrong username or password.</p>
+        <p class="muted" th:if="${param.registered}">Account created. Sign in below.</p>
+        <p class="muted" th:if="${param.logout}">You have been signed out.</p>
+
+        <form th:action="@{/login}" method="post">
+            <div class="field">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" required autofocus>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </form>
+
+        <p class="switch">No account? <a th:href="@{/register}">Register</a></p>
+    </div>
+</main>
+</body>
+</html>

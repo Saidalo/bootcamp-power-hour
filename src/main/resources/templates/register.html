@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Register')}"></head>
+<body>
+<main>
+    <div class="card auth">
+        <div class="logo-big">PowerHour</div>
+
+        <form th:action="@{/register}" th:object="${form}" method="post" novalidate>
+            <div class="field">
+                <label for="username">Username</label>
+                <input id="username" th:field="*{username}" type="text" th:errorclass="invalid">
+                <span class="error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></span>
+            </div>
+            <div class="field">
+                <label for="email">Email</label>
+                <input id="email" th:field="*{email}" type="email" th:errorclass="invalid">
+                <span class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input id="password" th:field="*{password}" type="password" th:errorclass="invalid">
+                <span class="error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+            </div>
+            <div class="field">
+                <label for="biddingZone">Bidding zone</label>
+                <select id="biddingZone" th:field="*{biddingZone}">
+                    <option value="">Choose…</option>
+                    <option th:each="z : ${zones}" th:value="${z}" th:text="${z}">LV</option>
+                </select>
+                <span class="error" th:if="${#fields.hasErrors('biddingZone')}" th:errors="*{biddingZone}"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+
+        <p class="switch">Already have an account? <a th:href="@{/login}">Sign in</a></p>
+    </div>
+</main>
+</body>
+</html>
