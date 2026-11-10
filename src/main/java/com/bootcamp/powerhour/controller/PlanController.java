@@ -86,6 +86,7 @@ public class PlanController {
             model.addAttribute("error", "Not enough prices left today. Try Tomorrow.");
         }
         model.addAttribute("slots", priceService.toSlots(prices, allowed, chosen));
+        model.addAttribute("ticks", priceService.axisTicks(prices));
         return "plan";
     }
 

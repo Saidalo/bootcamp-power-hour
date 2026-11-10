@@ -1,0 +1,34 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="chart(slots, ticks)" class="price-chart">
+    <div class="price-axis">
+        <span th:each="t : ${ticks}" th:style="|bottom:${t.percent}%|" th:text="${t.label}">0.10</span>
+    </div>
+
+    <div class="chart">
+        <span th:each="t : ${ticks}" class="grid-line" th:style="|bottom:${t.percent}%|"></span>
+        <div th:each="s : ${slots}"
+             class="slot"
+             tabindex="0"
+             th:classappend="${!s.allowed} ? 'off' : (${s.chosen} ? 'chosen' : '')"
+             th:with="priceText=${#numbers.formatDecimal(s.price, 1, 'NONE', 4, 'POINT')}"
+             th:attr="aria-label=|${s.time} ${priceText} €/kWh|">
+            <div class="bar" th:style="|height:${s.heightPercent}%|">
+                <span class="tip">
+                    <span class="tip-time" th:text="${s.time}">18:00</span>
+                    <span class="tip-price" th:text="|${priceText} €/kWh|">0.1710 €/kWh</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="price-unit">€/kWh</div>
+    <div class="chart-axis">
+        <span th:each="s : ${slots}" th:text="${s.hourLabel}">00</span>
+    </div>
+</div>
+
+</body>
+</html>

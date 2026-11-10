@@ -54,19 +54,7 @@
     <div class="card" th:if="${slots != null and !slots.isEmpty()}">
         <h2 style="margin-top:0">Prices</h2>
 
-        <div class="chart">
-            <div th:each="s : ${slots}"
-                 class="slot"
-                 th:classappend="${!s.allowed} ? 'off' : (${s.chosen} ? 'chosen' : '')"
-                 th:title="|${s.time} — ${s.price} €/kWh|">
-                <div class="bar"
-                     th:style="|height:${s.heightPercent}%|"></div>
-            </div>
-        </div>
-
-        <div class="chart-axis">
-            <span th:each="s : ${slots}" th:text="${s.hourLabel}">00</span>
-        </div>
+        <div th:replace="~{fragments/price-chart :: chart(${slots}, ${ticks})}"></div>
 
         <p class="small muted" style="margin-top:10px">
             Pale bars are outside the window you allow for this appliance.

@@ -28,14 +28,7 @@
         <div class="card">
             <h2 style="margin-top:0" th:text="|Today's prices (${selectedZone})|">Today's prices</h2>
             <div th:if="${!slots.isEmpty()}">
-                <div class="chart">
-                    <div th:each="s : ${slots}" class="slot" th:title="|${s.time} — ${s.price} €/kWh|">
-                        <div class="bar" th:style="|height:${s.heightPercent}%|"></div>
-                    </div>
-                </div>
-                <div class="chart-axis">
-                    <span th:each="s : ${slots}" th:text="${s.hourLabel}">00</span>
-                </div>
+                <div th:replace="~{fragments/price-chart :: chart(${slots}, ${ticks})}"></div>
             </div>
             <p class="muted" th:if="${slots.isEmpty()}">Nothing to show yet.</p>
         </div>
