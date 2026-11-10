@@ -24,31 +24,19 @@ public class ApplianceService {
         this.plannedRunRepository = plannedRunRepository;
     }
 
-    public List<ApplianceResponse> getAllAppliances() {
-        return applianceRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .toList();
-    }
-
     public List<ApplianceResponse> getAppliancesByUserId(Long userId) {
+        log.debug("Fetching appliances for user id={}", userId);
         return applianceRepository.findAllByUserId(userId).stream()
                 .map(this::mapToResponse)
                 .toList();
     }
 
-    public ApplianceResponse getApplianceById(Long id) {
-        Appliance appliance = applianceRepository.findById(id).orElseThrow(
-                () -> new ApplianceNotFoundException("Appliance with id " + id + " not found.")
-        );
-
-        return mapToResponse(appliance);
-    }
-
-//  The appliance, but only if it belongs to the user; otherwise 404.
+    //  The appliance, but only if it belongs to the user; otherwise 404.
     public Appliance getOwned(Long id, Long userId) {
         Appliance appliance = applianceRepository.findById(id)
                 .orElseThrow(() -> new ApplianceNotFoundException("Appliance with id " + id + " not found."));
         if (appliance.getUser().getId() != userId) {
+            log.warn("Appliance access denied: applianceId={}, userId={}", id, userId);
             throw new ApplianceNotFoundException("Appliance with id " + id + " not found.");
         }
         return appliance;
@@ -56,6 +44,7 @@ public class ApplianceService {
 
     public ApplianceForm toForm(Appliance appliance) {
         ApplianceForm form = new ApplianceForm();
+        form.setBiddingZone(appliance.getBiddingZone());
         form.setName(appliance.getName());
         form.setPowerKw(appliance.getPowerKw());
         form.setDurationMinutes(appliance.getDurationMinutes());
@@ -64,14 +53,14 @@ public class ApplianceService {
         return form;
     }
 
-//  Creates a new appliance when id is null, otherwise updates the user's own appliance.
+    //  Creates a new appliance when id is null, otherwise updates the user's own appliance.
     @Transactional
     public Appliance save(Long id, ApplianceForm form, User owner) {
         Appliance appliance = id == null ? new Appliance() : getOwned(id, owner.getId());
         if (id == null) {
             appliance.setUser(owner);
-            appliance.setBiddingZone(CurrentUserService.zoneOf(owner));
         }
+        appliance.setBiddingZone(form.getBiddingZone());
         appliance.setName(form.getName().trim());
         appliance.setPowerKw(form.getPowerKw());
         appliance.setDurationMinutes(form.getDurationMinutes());
@@ -82,7 +71,9 @@ public class ApplianceService {
         return saved;
     }
 
-    /** Deletes the appliance together with its planned runs. */
+    /**
+     * Deletes the appliance together with its planned runs.
+     */
     @Transactional
     public void delete(Long id, Long userId) {
         Appliance appliance = getOwned(id, userId);

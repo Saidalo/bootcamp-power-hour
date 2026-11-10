@@ -35,7 +35,6 @@ public class DataInitializer {
         user.setPasswordHash(passwordHash);
         user.setRole(role);
         user.setActive(true);
-        user.setBiddingZone(BiddingZone.LV);
         return user;
     }
 }
