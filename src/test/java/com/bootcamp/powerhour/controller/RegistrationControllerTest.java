@@ -86,4 +86,19 @@ class RegistrationControllerTest {
                         .param("biddingZone", "LV"))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void register_shouldTrimFieldsBeforeValidation() throws Exception {
+        mockMvc.perform(post("/register").with(csrf())
+                        .param("username", "  Anna  ")
+                        .param("email", "  Anna@Example.COM  ")
+                        .param("password", "password123")
+                        .param("biddingZone", "LV"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?registered"));
+
+        verify(userService).register(argThat(request ->
+                request.getUsername().equals("Anna")
+                        && request.getEmail().equals("anna@example.com")));
+    }
 }
