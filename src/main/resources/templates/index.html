@@ -4,6 +4,20 @@
 <body>
 <div th:replace="~{fragments/layout :: header('home')}"></div>
 <main>
+    <form th:action="@{/}" method="get" class="toolbar">
+        <label for="zone">Bidding zone</label>
+        <select id="zone" name="zone" onchange="this.form.submit()">
+            <option value="LV" th:selected="${selectedZone.name() == 'LV'}">
+                Latvia (LV)
+            </option>
+            <option value="EE" th:selected="${selectedZone.name() == 'EE'}">
+                Estonia (EE)
+            </option>
+            <option value="LT" th:selected="${selectedZone.name() == 'LT'}">
+                Lithuania (LT)
+            </option>
+        </select>
+    </form>
     <p class="headline" th:if="${cheapestTime != null}"
        th:text="|Cheapest hour today: ${cheapestTime}, ${cheapestPrice} €/kWh|">
         Cheapest hour today: 03:00, 0.0340 €/kWh
@@ -12,7 +26,7 @@
 
     <div class="home-grid">
         <div class="card">
-            <h2 style="margin-top:0">Today's prices</h2>
+            <h2 style="margin-top:0" th:text="|Today's prices (${selectedZone})|">Today's prices</h2>
             <div th:if="${!slots.isEmpty()}">
                 <div class="chart">
                     <div th:each="s : ${slots}" class="slot" th:title="|${s.time} — ${s.price} €/kWh|">

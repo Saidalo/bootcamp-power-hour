@@ -1,5 +1,6 @@
 package com.bootcamp.powerhour.dto;
 
+import com.bootcamp.powerhour.entity.BiddingZone;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Max;
@@ -17,6 +18,9 @@ import java.time.LocalTime;
 @Getter
 @Setter
 public class ApplianceForm {
+    @NotNull(message = "Choose a bidding zone")
+    private BiddingZone biddingZone;
+
     @NotBlank(message = "Enter a name")
     @Size(max = 100, message = "Name must be at most 100 characters")
     private String name;
