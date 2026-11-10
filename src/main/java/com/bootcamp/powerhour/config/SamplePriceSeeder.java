@@ -43,7 +43,7 @@ public class SamplePriceSeeder implements CommandLineRunner {
         for (BiddingZone zone : BiddingZone.values()) {
             for (LocalDate date = today.minusDays(30); !date.isAfter(today.plusDays(1)); date = date.plusDays(1)) {
                 OffsetDateTime start = PowerHourTime.startOfDay(date);
-                if (!priceRepository.existsByBiddingZoneAndStartsAtGreaterThanEqualAndStartsAtLessThan(
+                if (!priceRepository.existsInRange(
                         zone, start, PowerHourTime.startOfDay(date.plusDays(1)))) {
                     priceRepository.saveAll(dayOf(zone, date, start));
                     days++;

@@ -21,7 +21,7 @@ public class PriceService {
 
 //  All price slots of one local day, earliest first.
     public List<ElectricityPrice> pricesForDay(BiddingZone zone, LocalDate date) {
-        return priceRepository.findByBiddingZoneAndStartsAtGreaterThanEqualAndStartsAtLessThanOrderByStartsAt(
+        return priceRepository.findInRange(
                 zone, PowerHourTime.startOfDay(date), PowerHourTime.startOfDay(date.plusDays(1)));
     }
 
