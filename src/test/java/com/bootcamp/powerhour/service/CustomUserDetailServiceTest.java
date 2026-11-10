@@ -39,7 +39,7 @@ class CustomUserDetailServiceTest {
 
     @Test
     void loadUserByUsername_shouldReturnUserWithRole() {
-        when(userRepository.findByUsername("anna")).thenReturn(Optional.of(createUser(true)));
+        when(userRepository.findByUsernameIgnoreCase("anna")).thenReturn(Optional.of(createUser(true)));
 
         UserDetails details = userDetailService.loadUserByUsername("anna");
 
@@ -51,7 +51,7 @@ class CustomUserDetailServiceTest {
 
     @Test
     void loadUserByUsername_shouldDisableInactiveUser() {
-        when(userRepository.findByUsername("anna")).thenReturn(Optional.of(createUser(false)));
+        when(userRepository.findByUsernameIgnoreCase("anna")).thenReturn(Optional.of(createUser(false)));
 
         UserDetails details = userDetailService.loadUserByUsername("anna");
 
@@ -60,7 +60,7 @@ class CustomUserDetailServiceTest {
 
     @Test
     void loadUserByUsername_shouldThrowWhenUserNotFound() {
-        when(userRepository.findByUsername("ghost")).thenReturn(Optional.empty());
+        when(userRepository.findByUsernameIgnoreCase("ghost")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userDetailService.loadUserByUsername("ghost"))
                 .isInstanceOf(UsernameNotFoundException.class);

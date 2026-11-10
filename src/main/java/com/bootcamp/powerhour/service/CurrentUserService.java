@@ -14,7 +14,7 @@ public class CurrentUserService {
     private final UserRepository userRepository;
 
     public User get(Principal principal) {
-        return userRepository.findByUsername(principal.getName())
+        return userRepository.findByUsernameIgnoreCase(principal.getName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 }
