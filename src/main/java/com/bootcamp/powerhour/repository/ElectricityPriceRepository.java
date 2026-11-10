@@ -30,4 +30,12 @@ public interface ElectricityPriceRepository extends JpaRepository<ElectricityPri
           AND p.startsAt < :to
     """)
     boolean existsInRange(@Param("zone") BiddingZone biddingZone, @Param("from") OffsetDateTime from, @Param ("to") OffsetDateTime to);
+
+    @Query("""
+        SELECT COUNT(p) FROM ElectricityPrice p
+            WHERE p.biddingZone = :zone
+            AND p.startsAt >= :from
+            AND p.startsAt < :to
+    """)
+    long countInRange(@Param("zone") BiddingZone biddingZone, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 }
