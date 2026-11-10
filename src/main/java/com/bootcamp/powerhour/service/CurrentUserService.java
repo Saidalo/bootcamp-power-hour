@@ -1,6 +1,5 @@
 package com.bootcamp.powerhour.service;
 
-import com.bootcamp.powerhour.entity.BiddingZone;
 import com.bootcamp.powerhour.entity.User;
 import com.bootcamp.powerhour.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
