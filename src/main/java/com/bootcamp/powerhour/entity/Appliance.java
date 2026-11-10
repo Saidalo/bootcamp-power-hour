@@ -54,4 +54,7 @@ public class Appliance {
 
     @Column(nullable = false)
     private LocalTime allowedTo;
+
+    @Column(nullable = false)
+    private boolean isActive;
 }

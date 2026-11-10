@@ -123,6 +123,7 @@ class PlannedRunRepositoryTest {
         appliance.setDurationMinutes(120);
         appliance.setAllowedFrom(LocalTime.of(0, 0));
         appliance.setAllowedTo(LocalTime.of(7, 0));
+        appliance.setActive(true);
         return applianceRepository.save(appliance);
     }
 

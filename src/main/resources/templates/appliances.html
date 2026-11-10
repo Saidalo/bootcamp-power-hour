@@ -24,7 +24,7 @@
         <td class="actions">
           <a class="btn btn-ghost btn-small" th:href="@{/appliances/{id}/edit(id=${a.id})}">Edit</a>
           <form th:action="@{/appliances/{id}/delete(id=${a.id})}" method="post"
-                onsubmit="return confirm('Delete this appliance and its planned runs?')">
+                onsubmit="return confirm('Delete this appliance?')">
             <button type="submit" class="btn btn-danger btn-small">Delete</button>
           </form>
         </td>
