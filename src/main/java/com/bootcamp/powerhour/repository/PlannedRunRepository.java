@@ -29,7 +29,4 @@ public interface PlannedRunRepository extends JpaRepository<PlannedRun, Long> {
 
     List<PlannedRun> findByApplianceUserIdAndStatusAndStartsAtGreaterThanEqualAndStartsAtLessThan(
             long userId, PlannedRunStatus status, OffsetDateTime from, OffsetDateTime to);
-
-    @Transactional
-    void deleteByApplianceId(long applianceId);
 }
