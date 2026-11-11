@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -20,10 +21,12 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Checks that every query on planned runs is scoped to the owner of the
- * appliance, against a real database rather than a mock.
+ * appliance, and that the database refuses runs that make no sense,
+ * against a real database rather than a mock.
  *
  * Runs on an in-memory database, so it needs no Docker and leaves the
  * development data alone. The whole test rolls back afterwards.
@@ -53,20 +56,24 @@ class PlannedRunRepositoryTest {
     private PlannedRunRepository plannedRunRepository;
 
     private User ana;
+    private User boris;
+    private Appliance anasDishwasher;
     private PlannedRun anasRun;
     private PlannedRun borissRun;
 
     @BeforeEach
     void setUp() {
         ana = saveUser("ana");
-        User boris = saveUser("boris");
+        boris = saveUser("boris");
 
-        Appliance anasDishwasher = saveAppliance(ana, "Dishwasher");
+        anasDishwasher = saveAppliance(ana, "Dishwasher");
         Appliance borissDryer = saveAppliance(boris, "Dryer");
 
-        anasRun = saveRun(anasDishwasher, TONIGHT);
-        borissRun = saveRun(borissDryer, TONIGHT);
+        anasRun = saveRun(anasDishwasher, TONIGHT, PlannedRunStatus.PLANNED);
+        borissRun = saveRun(borissDryer, TONIGHT, PlannedRunStatus.PLANNED);
     }
+
+    // --- Listing runs, newest first ---
 
     @Test
     void listsOnlyTheRunsOfTheGivenUser() {
@@ -79,7 +86,7 @@ class PlannedRunRepositoryTest {
     @Test
     void returnsTheLatestRunFirst() {
         Appliance anasDryer = saveAppliance(ana, "Dryer");
-        PlannedRun later = saveRun(anasDryer, TONIGHT.plusDays(1));
+        PlannedRun later = saveRun(anasDryer, TONIGHT.plusDays(1), PlannedRunStatus.PLANNED);
 
         List<PlannedRun> found = plannedRunRepository
                 .findByApplianceUserIdOrderByStartsAtDesc(ana.getId());
@@ -87,6 +94,40 @@ class PlannedRunRepositoryTest {
         assertThat(found).extracting(PlannedRun::getId)
                 .containsExactly(later.getId(), anasRun.getId());
     }
+
+    @Test
+    void listsNothingForAUserWithoutRuns() {
+        User clara = saveUser("clara");
+
+        assertThat(plannedRunRepository.findByApplianceUserIdOrderByStartsAtDesc(clara.getId())).isEmpty();
+    }
+
+    // --- Listing runs, oldest first (the "My runs" page) ---
+
+    @Test
+    void listsMyRunsOldestFirst() {
+        PlannedRun later = saveRun(anasDishwasher, TONIGHT.plusDays(1), PlannedRunStatus.PLANNED);
+        PlannedRun earlier = saveRun(anasDishwasher, TONIGHT.minusDays(1), PlannedRunStatus.COMPLETED);
+
+        List<PlannedRun> found = plannedRunRepository.findByApplianceUserIdOrderByStartsAtAsc(ana.getId());
+
+        assertThat(found).extracting(PlannedRun::getId)
+                .containsExactly(earlier.getId(), anasRun.getId(), later.getId());
+    }
+
+    @Test
+    void listsRunsOfAllMyAppliancesButNotOfOthers() {
+        Appliance anasDryer = saveAppliance(ana, "Dryer");
+        PlannedRun dryerRun = saveRun(anasDryer, TONIGHT.plusHours(3), PlannedRunStatus.PLANNED);
+
+        List<PlannedRun> found = plannedRunRepository.findByApplianceUserIdOrderByStartsAtAsc(ana.getId());
+
+        assertThat(found).extracting(PlannedRun::getId)
+                .containsExactly(anasRun.getId(), dryerRun.getId())
+                .doesNotContain(borissRun.getId());
+    }
+
+    // --- Finding one run ---
 
     @Test
     void findsARunOfItsOwner() {
@@ -102,6 +143,249 @@ class PlannedRunRepositoryTest {
                 .findByIdAndApplianceUserId(borissRun.getId(), ana.getId());
 
         assertThat(found).isEmpty();
+    }
+
+    @Test
+    void doesNotFindARunThatDoesNotExist() {
+        assertThat(plannedRunRepository.findByIdAndApplianceUserId(999_999L, ana.getId())).isEmpty();
+    }
+
+    // --- The next planned run (home page) ---
+
+    @Test
+    void findsTheNextPlannedRun() {
+        Optional<PlannedRun> next = plannedRunRepository
+                .findFirstByApplianceUserIdAndStatusAndStartsAtAfterOrderByStartsAtAsc(
+                        ana.getId(), PlannedRunStatus.PLANNED, TONIGHT.minusHours(1));
+
+        assertThat(next).map(PlannedRun::getId).contains(anasRun.getId());
+    }
+
+    @Test
+    void theNextRunIsTheEarliestOneAhead() {
+        saveRun(anasDishwasher, TONIGHT.plusDays(2), PlannedRunStatus.PLANNED);
+        PlannedRun tomorrow = saveRun(anasDishwasher, TONIGHT.plusDays(1), PlannedRunStatus.PLANNED);
+
+        Optional<PlannedRun> next = plannedRunRepository
+                .findFirstByApplianceUserIdAndStatusAndStartsAtAfterOrderByStartsAtAsc(
+                        ana.getId(), PlannedRunStatus.PLANNED, TONIGHT.plusMinutes(1));
+
+        assertThat(next).map(PlannedRun::getId).contains(tomorrow.getId());
+    }
+
+    @Test
+    void aRunThatAlreadyStartedIsNotTheNextOne() {
+        Optional<PlannedRun> next = plannedRunRepository
+                .findFirstByApplianceUserIdAndStatusAndStartsAtAfterOrderByStartsAtAsc(
+                        ana.getId(), PlannedRunStatus.PLANNED, TONIGHT);
+
+        assertThat(next).isEmpty();
+    }
+
+    @Test
+    void canceledAndCompletedRunsAreNotTheNextOne() {
+        anasRun.setStatus(PlannedRunStatus.CANCELED);
+        saveRun(anasDishwasher, TONIGHT.plusDays(1), PlannedRunStatus.COMPLETED);
+
+        Optional<PlannedRun> next = plannedRunRepository
+                .findFirstByApplianceUserIdAndStatusAndStartsAtAfterOrderByStartsAtAsc(
+                        ana.getId(), PlannedRunStatus.PLANNED, TONIGHT.minusHours(1));
+
+        assertThat(next).isEmpty();
+    }
+
+    @Test
+    void someoneElsesEarlierRunIsNotMyNextOne() {
+        borissRun.setStartsAt(TONIGHT.minusHours(2));
+        borissRun.setEndsAt(TONIGHT.minusHours(1));
+
+        Optional<PlannedRun> next = plannedRunRepository
+                .findFirstByApplianceUserIdAndStatusAndStartsAtAfterOrderByStartsAtAsc(
+                        ana.getId(), PlannedRunStatus.PLANNED, TONIGHT.minusHours(3));
+
+        assertThat(next).map(PlannedRun::getId).contains(anasRun.getId());
+    }
+
+    // --- Completed runs of a month (savings) ---
+
+    @Test
+    void theMonthIncludesItsFirstMomentAndExcludesTheNextMonth() {
+        OffsetDateTime from = OffsetDateTime.of(2026, 11, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime to = OffsetDateTime.of(2026, 12, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        PlannedRun first = saveRun(anasDishwasher, from, PlannedRunStatus.COMPLETED);
+        saveRun(anasDishwasher, to, PlannedRunStatus.COMPLETED);
+        saveRun(anasDishwasher, from.minusMinutes(1), PlannedRunStatus.COMPLETED);
+
+        List<PlannedRun> found = plannedRunRepository
+                .findByApplianceUserIdAndStatusAndStartsAtGreaterThanEqualAndStartsAtLessThan(
+                        ana.getId(), PlannedRunStatus.COMPLETED, from, to);
+
+        assertThat(found).extracting(PlannedRun::getId).containsExactly(first.getId());
+    }
+
+    @Test
+    void theMonthOnlyHasRunsWithTheGivenStatus() {
+        OffsetDateTime from = OffsetDateTime.of(2026, 11, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime to = OffsetDateTime.of(2026, 12, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        PlannedRun completed = saveRun(anasDishwasher, TONIGHT.minusDays(1), PlannedRunStatus.COMPLETED);
+        saveRun(anasDishwasher, TONIGHT.minusDays(2), PlannedRunStatus.CANCELED);
+
+        List<PlannedRun> found = plannedRunRepository
+                .findByApplianceUserIdAndStatusAndStartsAtGreaterThanEqualAndStartsAtLessThan(
+                        ana.getId(), PlannedRunStatus.COMPLETED, from, to);
+
+        // anasRun (planned) and the canceled run are left out
+        assertThat(found).extracting(PlannedRun::getId).containsExactly(completed.getId());
+    }
+
+    @Test
+    void theMonthOnlyHasMyRuns() {
+        OffsetDateTime from = OffsetDateTime.of(2026, 11, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime to = OffsetDateTime.of(2026, 12, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        borissRun.setStatus(PlannedRunStatus.COMPLETED);
+
+        List<PlannedRun> found = plannedRunRepository
+                .findByApplianceUserIdAndStatusAndStartsAtGreaterThanEqualAndStartsAtLessThan(
+                        ana.getId(), PlannedRunStatus.COMPLETED, from, to);
+
+        assertThat(found).isEmpty();
+    }
+
+    // --- Runs of one appliance by status ---
+
+    @Test
+    void findsTheRunsOfOneApplianceByStatus() {
+        assertThat(plannedRunRepository.findByApplianceIdAndStatus(anasDishwasher.getId(), PlannedRunStatus.PLANNED))
+                .extracting(PlannedRun::getId).containsExactly(anasRun.getId());
+        assertThat(plannedRunRepository.findByApplianceIdAndStatus(anasDishwasher.getId(), PlannedRunStatus.COMPLETED))
+                .isEmpty();
+    }
+
+    // --- History is kept when an appliance is deleted (soft delete) ---
+
+    @Test
+    void keepsTheRunsOfADeletedAppliance() {
+        anasDishwasher.setActive(false);
+
+        assertThat(plannedRunRepository.findByApplianceUserIdOrderByStartsAtDesc(ana.getId()))
+                .extracting(PlannedRun::getId).containsExactly(anasRun.getId());
+    }
+
+    @Test
+    void aRunKeepsItsEnergyAndZoneWhenTheApplianceIsEdited() {
+        anasDishwasher.setPowerKw(new BigDecimal("3.50"));
+        anasDishwasher.setDurationMinutes(200);
+        anasDishwasher.setBiddingZone(BiddingZone.EE);
+
+        PlannedRun found = plannedRunRepository.findByIdAndApplianceUserId(anasRun.getId(), ana.getId()).orElseThrow();
+
+        assertThat(found.getEnergyKwh()).isEqualByComparingTo("4.0000");
+        assertThat(found.getBiddingZone()).isEqualTo(BiddingZone.LV);
+        assertThat(found.getEstimatedCost()).isEqualByComparingTo("0.400000");
+    }
+
+    // --- The database refuses runs that make no sense ---
+
+    @Test
+    void refusesARunThatEndsBeforeItStarts() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEndsAt(TONIGHT.minusMinutes(1));
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesARunThatEndsTheMomentItStarts() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEndsAt(TONIGHT);
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesZeroEnergy() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEnergyKwh(BigDecimal.ZERO);
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesNegativeEnergy() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEnergyKwh(new BigDecimal("-1.0000"));
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesARunWithoutEnergy() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEnergyKwh(null);
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesARunWithoutAZone() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setBiddingZone(null);
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesARunWithoutACost() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEstimatedCost(null);
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesARunWithoutAStatus() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setStatus(null);
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void refusesARunWithoutAnAppliance() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setAppliance(null);
+
+        assertThatThrownBy(() -> plannedRunRepository.saveAndFlush(run))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void acceptsTheSmallestPositiveEnergy() {
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEnergyKwh(new BigDecimal("0.0001"));
+
+        PlannedRun saved = plannedRunRepository.saveAndFlush(run);
+
+        assertThat(saved.getId()).isPositive();
+    }
+
+    @Test
+    void acceptsAFreeOrNegativeCost() {
+        // negative day-ahead prices happen, so a run can earn money
+        PlannedRun run = newRun(anasDishwasher, TONIGHT);
+        run.setEstimatedCost(new BigDecimal("-0.120000"));
+
+        PlannedRun saved = plannedRunRepository.saveAndFlush(run);
+
+        assertThat(saved.getEstimatedCost()).isEqualByComparingTo("-0.12");
     }
 
     private User saveUser(String username) {
@@ -127,7 +411,13 @@ class PlannedRunRepositoryTest {
         return applianceRepository.save(appliance);
     }
 
-    private PlannedRun saveRun(Appliance appliance, OffsetDateTime startsAt) {
+    private PlannedRun saveRun(Appliance appliance, OffsetDateTime startsAt, PlannedRunStatus status) {
+        PlannedRun run = newRun(appliance, startsAt);
+        run.setStatus(status);
+        return plannedRunRepository.save(run);
+    }
+
+    private PlannedRun newRun(Appliance appliance, OffsetDateTime startsAt) {
         PlannedRun run = new PlannedRun();
         run.setAppliance(appliance);
         run.setBiddingZone(appliance.getBiddingZone());
@@ -136,6 +426,6 @@ class PlannedRunRepositoryTest {
         run.setEnergyKwh(new BigDecimal("4.0000"));
         run.setEstimatedCost(new BigDecimal("0.400000"));
         run.setStatus(PlannedRunStatus.PLANNED);
-        return plannedRunRepository.save(run);
+        return run;
     }
 }
