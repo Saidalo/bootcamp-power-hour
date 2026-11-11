@@ -13,8 +13,8 @@
                 <label for="biddingZone">Bidding zone</label>
                 <select id="biddingZone" th:field="*{biddingZone}" th:errorClass="invalid">
                     <option value="">Select bidding zone</option>
-                    <option value="LV">Latvia (LV)</option>
                     <option value="EE">Estonia (EE)</option>
+                    <option value="LV">Latvia (LV)</option>
                     <option value="LT">Lithuania (LT)</option>
                 </select>
                 <span class="error" th:if="${#fields.hasErrors('biddingZone')}" th:errors="*{biddingZone}"></span>
