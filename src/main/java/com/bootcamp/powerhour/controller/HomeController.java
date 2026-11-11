@@ -33,6 +33,7 @@ public class HomeController {
             model.addAttribute("cheapestPrice", cheapest.getPriceEurKwh().setScale(4, java.math.RoundingMode.HALF_UP));
         });
         model.addAttribute("slots", priceService.toSlots(prices, null, null));
+        model.addAttribute("ticks", priceService.axisTicks(prices));
         model.addAttribute("nextRun", plannedRunService.nextPlanned(user.getId()).orElse(null));
         model.addAttribute("selectedZone", zone);
         return "index";
