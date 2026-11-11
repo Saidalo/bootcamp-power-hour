@@ -7,11 +7,11 @@
     <form th:action="@{/}" method="get" class="toolbar">
         <label for="zone">Bidding zone</label>
         <select id="zone" name="zone" onchange="this.form.submit()">
-            <option value="LV" th:selected="${selectedZone.name() == 'LV'}">
-                Latvia (LV)
-            </option>
             <option value="EE" th:selected="${selectedZone.name() == 'EE'}">
                 Estonia (EE)
+            </option>
+            <option value="LV" th:selected="${selectedZone.name() == 'LV'}">
+                Latvia (LV)
             </option>
             <option value="LT" th:selected="${selectedZone.name() == 'LT'}">
                 Lithuania (LT)
