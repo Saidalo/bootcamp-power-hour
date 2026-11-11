@@ -15,10 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -152,8 +149,10 @@ public class PriceImportService {
         ZoneId zone = ZoneId.of("Europe/Tallinn");
         OffsetDateTime from = date.atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime to = date.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+
+        long expectedSlots = Duration.between(from, to).toMinutes() / 15;
         for (BiddingZone biddingZone : BiddingZone.values()) {
-            if (!priceRepository.existsInRange(biddingZone, from, to)) {
+            if (priceRepository.countInRange(biddingZone, from, to) < expectedSlots) {
                 return false;
             }
         }

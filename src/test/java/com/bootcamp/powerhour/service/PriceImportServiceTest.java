@@ -116,4 +116,16 @@ public class PriceImportServiceTest {
         assertThatThrownBy(() -> service.importZone("XX", DATE))
                 .isInstanceOf(ZoneNotFoundException.class);
     }
+
+    @Test
+    void hasPrices_shouldBeFalseWhenDayIsIncomplete() {
+        when(priceRepository.countInRange(any(), any(), any())).thenReturn(24L);
+        assertThat(service.hasPrices(LocalDate.of(2026, 11, 11))).isFalse();
+    }
+
+    @Test
+    void hasPrices_shouldBeTrueWhenEveryZoneHasAFullDay() {
+        when(priceRepository.countInRange(any(), any(), any())).thenReturn(96L);
+        assertThat(service.hasPrices(LocalDate.of(2026, 11, 11))).isTrue();
+    }
 }
