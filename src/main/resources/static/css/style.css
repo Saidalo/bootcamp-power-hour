@@ -279,6 +279,8 @@ td.actions { text-align: right; white-space: nowrap; }
 .chart .slot { cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; }
 .chart .slot:hover .bar,
 .chart .slot:focus .bar { filter: brightness(0.85); }
+.chart .slot:hover,
+.chart .slot:focus { z-index: 10; }
 
 .chart .tip {
     display: none;
