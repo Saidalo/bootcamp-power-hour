@@ -6,7 +6,6 @@ import com.bootcamp.powerhour.entity.Appliance;
 import com.bootcamp.powerhour.entity.User;
 import com.bootcamp.powerhour.exception.ApplianceNotFoundException;
 import com.bootcamp.powerhour.repository.ApplianceRepository;
-import com.bootcamp.powerhour.repository.PlannedRunRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,11 +16,9 @@ import java.util.List;
 @Service
 public class ApplianceService {
     private final ApplianceRepository applianceRepository;
-    private final PlannedRunRepository plannedRunRepository;
 
-    public ApplianceService(ApplianceRepository applianceRepository, PlannedRunRepository plannedRunRepository) {
+    public ApplianceService(ApplianceRepository applianceRepository) {
         this.applianceRepository = applianceRepository;
-        this.plannedRunRepository = plannedRunRepository;
     }
 
     public List<ApplianceResponse> getAppliancesByUserId(Long userId) {
