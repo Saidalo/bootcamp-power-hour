@@ -5,7 +5,7 @@ import com.bootcamp.powerhour.entity.ElectricityPrice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.jpa.repository.Modifying;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -38,4 +38,13 @@ public interface ElectricityPriceRepository extends JpaRepository<ElectricityPri
             AND p.startsAt < :to
     """)
     long countInRange(@Param("zone") BiddingZone biddingZone, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    @Modifying
+    @Query("""
+        DELETE FROM ElectricityPrice p
+            WHERE p.biddingZone = :zone
+            AND p.startsAt >= :from
+            AND p.startsAt < :to
+    """)
+    int deleteInRange(@Param("zone") BiddingZone biddingZone, @Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 }
