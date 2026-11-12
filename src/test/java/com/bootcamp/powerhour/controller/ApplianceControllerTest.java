@@ -193,6 +193,25 @@ public class ApplianceControllerTest {
     }
 
     @Test
+    void create_shouldRejectDurationLongerThanAllowedWindow() throws Exception {
+        mockMvc.perform(post("/appliances")
+                        .with(user("testuser"))
+                        .with(csrf())
+                        .param("biddingZone", "LV")
+                        .param("name", "Dishwasher")
+                        .param("powerKw", "2.5")
+                        .param("durationMinutes", "121")
+                        .param("allowedFrom", "23:00")
+                        .param("allowedTo", "01:00"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("appliance-form"))
+                .andExpect(model().attributeHasFieldErrors("form", "durationWithinAllowedWindow"));
+
+        verifyNoInteractions(applianceService);
+        verifyNoInteractions(currentUserService);
+    }
+
+    @Test
     void update_shouldSaveApplianceWhenFormIsValid() throws Exception {
         User currentUser = new User();
         currentUser.setId(1L);

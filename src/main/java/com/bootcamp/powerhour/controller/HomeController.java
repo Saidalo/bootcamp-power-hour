@@ -24,7 +24,7 @@ public class HomeController {
     private final PlannedRunService plannedRunService;
 
     @GetMapping("/")
-    public String home(Principal principal, @RequestParam(defaultValue = "LV") BiddingZone zone, Model model) {
+    public String home(Principal principal, @RequestParam(defaultValue = "EE") BiddingZone zone, Model model) {
         User user = currentUserService.get(principal);
         List<ElectricityPrice> prices = priceService.pricesForDay(zone, PowerHourTime.today());
 

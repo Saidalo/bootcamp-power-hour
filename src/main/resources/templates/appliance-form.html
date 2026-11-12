@@ -27,7 +27,7 @@
             <div class="field">
                 <label for="powerKw">Power in kW</label>
                 <input id="powerKw" th:field="*{powerKw}" type="number" step="0.001" min="0.001" th:errorclass="invalid">
-                <span class="hint">Usually 2–2.5 kW for a dishwasher – it's on the rating label.</span>
+                <span class="hint">Check the appliance's rating label for its power in kW.</span>
                 <span class="error" th:if="${#fields.hasErrors('powerKw')}" th:errors="*{powerKw}"></span>
             </div>
             <div class="field">
@@ -36,6 +36,8 @@
                        th:errorclass="invalid">
                 <span class="error" th:if="${#fields.hasErrors('durationMinutes')}"
                       th:errors="*{durationMinutes}"></span>
+                <span class="error" th:if="${#fields.hasErrors('durationWithinAllowedWindow')}"
+                      th:errors="*{durationWithinAllowedWindow}"></span>
             </div>
             <div class="field">
                 <label for="allowedFrom">Allowed from</label>
