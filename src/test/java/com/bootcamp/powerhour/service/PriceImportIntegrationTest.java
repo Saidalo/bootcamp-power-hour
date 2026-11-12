@@ -28,7 +28,9 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(properties = {"spring.datasource.url=jdbc:h2:mem:price-import-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop"})
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "elering.import-on-startup=false",
+        "elering.import-cron=-"})
 public class PriceImportIntegrationTest {
     private static final LocalDate DATE = LocalDate.of(2026, 11, 6);
     private static final OffsetDateTime FIRST_SLOT = OffsetDateTime.of(2026, 11, 5, 22, 0, 0, 0, ZoneOffset.UTC);
