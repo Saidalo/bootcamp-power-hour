@@ -20,8 +20,8 @@ public class User {
     @Column(
             nullable = false,
             unique = true,
-            length = 100,
-            check = @CheckConstraint(constraint = "LENGTH(TRIM(username)) > 0")
+            length = 50,
+            check = @CheckConstraint(constraint = "LENGTH(TRIM(username)) >= 3")
     )
     private String username;
 
