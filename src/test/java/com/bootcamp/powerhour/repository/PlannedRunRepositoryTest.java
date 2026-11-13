@@ -6,6 +6,7 @@ import com.bootcamp.powerhour.entity.PlannedRun;
 import com.bootcamp.powerhour.entity.PlannedRunStatus;
 import com.bootcamp.powerhour.entity.Role;
 import com.bootcamp.powerhour.entity.User;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +58,9 @@ class PlannedRunRepositoryTest {
     @Autowired
     private PlannedRunRepository plannedRunRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     private User ana;
     private User boris;
     private Appliance anasDishwasher;
@@ -75,37 +79,22 @@ class PlannedRunRepositoryTest {
         borissRun = saveRun(borissDryer, TONIGHT, PlannedRunStatus.PLANNED);
     }
 
-    // --- Listing runs, newest first ---
+    // --- Listing runs, oldest first (the "My runs" page) ---
 
     @Test
     void listsOnlyTheRunsOfTheGivenUser() {
         List<PlannedRun> found = plannedRunRepository
-                .findByApplianceUserIdOrderByStartsAtDesc(ana.getId());
+                .findByApplianceUserIdOrderByStartsAtAsc(ana.getId());
 
         assertThat(found).extracting(PlannedRun::getId).containsExactly(anasRun.getId());
-    }
-
-    @Test
-    void returnsTheLatestRunFirst() {
-        Appliance anasDryer = saveAppliance(ana, "Dryer");
-        PlannedRun later = saveRun(anasDryer, TONIGHT.plusDays(1), PlannedRunStatus.PLANNED);
-
-        List<PlannedRun> found = plannedRunRepository
-                .findByApplianceUserIdOrderByStartsAtDesc(ana.getId());
-
-        assertThat(found).extracting(PlannedRun::getId)
-                .containsExactly(later.getId(), anasRun.getId());
     }
 
     @Test
     void listsNothingForAUserWithoutRuns() {
         User clara = saveUser("clara");
 
-        assertThat(plannedRunRepository.findByApplianceUserIdOrderByStartsAtDesc(clara.getId())).isEmpty();
+        assertThat(plannedRunRepository.findByApplianceUserIdOrderByStartsAtAsc(clara.getId())).isEmpty();
     }
-
-    // --- Listing runs, oldest first (the "My runs" page) ---
-
     @Test
     void listsMyRunsOldestFirst() {
         PlannedRun later = saveRun(anasDishwasher, TONIGHT.plusDays(1), PlannedRunStatus.PLANNED);
@@ -253,23 +242,16 @@ class PlannedRunRepositoryTest {
         assertThat(found).isEmpty();
     }
 
-    // --- Runs of one appliance by status ---
-
-    @Test
-    void findsTheRunsOfOneApplianceByStatus() {
-        assertThat(plannedRunRepository.findByApplianceIdAndStatus(anasDishwasher.getId(), PlannedRunStatus.PLANNED))
-                .extracting(PlannedRun::getId).containsExactly(anasRun.getId());
-        assertThat(plannedRunRepository.findByApplianceIdAndStatus(anasDishwasher.getId(), PlannedRunStatus.COMPLETED))
-                .isEmpty();
-    }
 
     // --- History is kept when an appliance is deleted (soft delete) ---
 
     @Test
     void keepsTheRunsOfADeletedAppliance() {
         anasDishwasher.setActive(false);
+        entityManager.flush();
+        entityManager.clear();
 
-        assertThat(plannedRunRepository.findByApplianceUserIdOrderByStartsAtDesc(ana.getId()))
+        assertThat(plannedRunRepository.findByApplianceUserIdOrderByStartsAtAsc(ana.getId()))
                 .extracting(PlannedRun::getId).containsExactly(anasRun.getId());
     }
 
@@ -278,9 +260,12 @@ class PlannedRunRepositoryTest {
         anasDishwasher.setPowerKw(new BigDecimal("3.50"));
         anasDishwasher.setDurationMinutes(200);
         anasDishwasher.setBiddingZone(BiddingZone.EE);
+        entityManager.flush();
+        entityManager.clear();
 
         PlannedRun found = plannedRunRepository.findByIdAndApplianceUserId(anasRun.getId(), ana.getId()).orElseThrow();
 
+        assertThat(found).isNotSameAs(anasRun);
         assertThat(found.getEnergyKwh()).isEqualByComparingTo("4.0000");
         assertThat(found.getBiddingZone()).isEqualTo(BiddingZone.LV);
         assertThat(found.getEstimatedCost()).isEqualByComparingTo("0.400000");

@@ -71,6 +71,12 @@
         </p>
     </div>
 
+    <div class="card error" th:if="${notice != null}">
+        <p style="margin:0" th:text="${notice}">
+            Prices or the time changed since you looked, so the cheapest window moved. Check it and confirm again.
+        </p>
+    </div>
+
     <div class="card result" th:if="${window != null}">
         <h2 style="margin-top:0"
             th:text="|Start at ${startLabel}, finish ${endLabel}. Estimated ${costLabel} €|">
@@ -81,6 +87,8 @@
         <form th:action="@{/plan}" method="post">
             <input type="hidden" name="applianceId" th:value="${selectedId}">
             <input type="hidden" name="day" th:value="${day}">
+            <input type="hidden" name="shownStartsAt" th:value="${window.startsAt}">
+            <input type="hidden" name="shownCost" th:value="${window.estimatedCost}">
             <button type="submit" class="btn btn-primary">Plan this run</button>
         </form>
     </div>

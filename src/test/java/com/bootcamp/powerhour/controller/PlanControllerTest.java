@@ -48,6 +48,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -316,13 +317,121 @@ class PlanControllerTest {
 
         mockMvc.perform(post("/plan").with(csrf())
                         .param("applianceId", "1")
-                        .param("day", "tomorrow"))
+                        .param("day", "tomorrow")
+                        .param("shownStartsAt", window.startsAt().toString())
+                        .param("shownCost", window.estimatedCost().toPlainString()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/runs"));
 
         verify(cheapestWindowService).findCheapestWindow(
                 appliance, tomorrowStart, PowerHourTime.startOfDay(tomorrow.plusDays(1)).minusSeconds(1));
         verify(plannedRunService).plan(appliance, window);
+    }
+
+    @Test
+    @WithMockUser(username = "ana")
+    void savesWhenTheShownTimeIsWrittenWithAnotherOffset() throws Exception {
+        when(cheapestWindowService.findCheapestWindow(eq(appliance), any(), any())).thenReturn(window);
+
+        // the same moment, written in Riga time instead of UTC
+        String inRigaTime = window.startsAt().atZoneSameInstant(PowerHourTime.ZONE).toOffsetDateTime().toString();
+
+        mockMvc.perform(post("/plan").with(csrf())
+                        .param("applianceId", "1")
+                        .param("day", "tomorrow")
+                        .param("shownStartsAt", inRigaTime)
+                        .param("shownCost", "0.40"))
+                .andExpect(redirectedUrl("/runs"));
+
+        verify(plannedRunService).plan(appliance, window);
+    }
+
+    @Test
+    @WithMockUser(username = "ana")
+    void asksAgainWhenTheCheapestWindowMoved() throws Exception {
+        when(cheapestWindowService.findCheapestWindow(eq(appliance), any(), any())).thenReturn(window);
+
+        mockMvc.perform(post("/plan").with(csrf())
+                        .param("applianceId", "1")
+                        .param("day", "tomorrow")
+                        .param("shownStartsAt", window.startsAt().minusHours(1).toString())
+                        .param("shownCost", window.estimatedCost().toPlainString()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/plan?applianceId=1&day=tomorrow"))
+                .andExpect(flash().attribute("notice", PlanController.WINDOW_CHANGED));
+
+        verifyNoInteractions(plannedRunService);
+    }
+
+    @Test
+    @WithMockUser(username = "ana")
+    void asksAgainWhenThePriceChanged() throws Exception {
+        when(cheapestWindowService.findCheapestWindow(eq(appliance), any(), any())).thenReturn(window);
+
+        mockMvc.perform(post("/plan").with(csrf())
+                        .param("applianceId", "1")
+                        .param("day", "tomorrow")
+                        .param("shownStartsAt", window.startsAt().toString())
+                        .param("shownCost", "0.3500"))
+                .andExpect(redirectedUrl("/plan?applianceId=1&day=tomorrow"))
+                .andExpect(flash().attribute("notice", PlanController.WINDOW_CHANGED));
+
+        verifyNoInteractions(plannedRunService);
+    }
+
+    @Test
+    @WithMockUser(username = "ana")
+    void asksAgainWhenTheFormDidNotSayWhichWindowWasShown() throws Exception {
+        when(cheapestWindowService.findCheapestWindow(eq(appliance), any(), any())).thenReturn(window);
+
+        mockMvc.perform(post("/plan").with(csrf())
+                        .param("applianceId", "1")
+                        .param("day", "tomorrow"))
+                .andExpect(redirectedUrl("/plan?applianceId=1&day=tomorrow"))
+                .andExpect(flash().attribute("notice", PlanController.WINDOW_CHANGED));
+
+        verifyNoInteractions(plannedRunService);
+    }
+
+    @Test
+    @WithMockUser(username = "ana")
+    void asksAgainWhenTheShownTimeIsNotADate() throws Exception {
+        when(cheapestWindowService.findCheapestWindow(eq(appliance), any(), any())).thenReturn(window);
+
+        mockMvc.perform(post("/plan").with(csrf())
+                        .param("applianceId", "1")
+                        .param("day", "tomorrow")
+                        .param("shownStartsAt", "not-a-date")
+                        .param("shownCost", "0.4000"))
+                .andExpect(redirectedUrl("/plan?applianceId=1&day=tomorrow"));
+
+        verifyNoInteractions(plannedRunService);
+    }
+
+    @Test
+    @WithMockUser(username = "ana")
+    void showsTheNoticeAfterTheWindowMoved() throws Exception {
+        givenPricesTomorrow();
+        when(cheapestWindowService.findCheapestWindow(eq(appliance), any(), any())).thenReturn(window);
+
+        mockMvc.perform(get("/plan").param("applianceId", "1").param("day", "tomorrow")
+                        .flashAttr("notice", PlanController.WINDOW_CHANGED))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("window", window))
+                .andExpect(content().string(containsString("the cheapest window moved")));
+    }
+
+    @Test
+    @WithMockUser(username = "ana")
+    void theFormSendsTheWindowTheUserSaw() throws Exception {
+        givenPricesTomorrow();
+        when(cheapestWindowService.findCheapestWindow(eq(appliance), any(), any())).thenReturn(window);
+
+        mockMvc.perform(get("/plan").param("applianceId", "1").param("day", "tomorrow"))
+                .andExpect(content().string(containsString(
+                        "name=\"shownStartsAt\" value=\"" + window.startsAt() + "\"")))
+                .andExpect(content().string(containsString(
+                        "name=\"shownCost\" value=\"" + window.estimatedCost() + "\"")));
     }
 
     @Test
