@@ -30,6 +30,7 @@ jobs:
       APP_IMAGE_NAME: acn-power-hour-team-3
       DB_CONTAINER_NAME: acn-power-hour-team-3-db
       DOCKER_NETWORK: acn-power-hour-team-3-net
+      DB_USERNAME: powerhour
 
     steps:
       - name: Checkout code
@@ -101,7 +102,14 @@ jobs:
             .
 
       - name: Start Postgres (if not running)
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
+          if [ -z "$DB_PASSWORD" ]; then
+            echo "Missing DB_PASSWORD secret (Settings > Secrets and variables > Actions)"
+            exit 1
+          fi
+          
           docker network create $DOCKER_NETWORK || true
 
           if ! docker ps --format '{{.Names}}' | grep -qx "$DB_CONTAINER_NAME"; then
@@ -111,14 +119,14 @@ jobs:
               --network $DOCKER_NETWORK \
               --restart unless-stopped \
               -e POSTGRES_DB=powerhour \
-              -e POSTGRES_USER=powerhour \
-              -e POSTGRES_PASSWORD=powerhour \
+              -e POSTGRES_USER="$DB_USERNAME" \
+              -e POSTGRES_PASSWORD="$DB_PASSWORD" \
               -v acn-power-hour-team-3-pgdata:/var/lib/postgresql/data \
               postgres:17
           fi
 
           for i in {1..30}; do
-            if docker exec $DB_CONTAINER_NAME pg_isready -U powerhour; then
+            if docker exec $DB_CONTAINER_NAME pg_isready -U "$DB_USERNAME"; then
               exit 0
             fi
             sleep 2
@@ -141,12 +149,15 @@ jobs:
           DEPLOYMENT_TIMESTAMP: ${{ steps.deployment-info.outputs.timestamp }}
           STARTUP_SLEEP_SECONDS: ${{ github.event.inputs.startup_sleep_seconds || '5' }}
           APP_IMAGE_TAG: ${{ env.APP_IMAGE_NAME }}:${{ steps.deployment-info.outputs.commit }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
         run: |
           docker run -d \
             --name $APP_CONTAINER_NAME \
             --network $DOCKER_NETWORK \
             --restart unless-stopped \
             -p $SERVER_PORT:$SERVER_PORT \
+            -e DB_USERNAME="$DB_USERNAME" \
+            -e DB_PASSWORD="$DB_PASSWORD" \
             -e SERVER_PORT=$SERVER_PORT \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://$DB_CONTAINER_NAME:5432/powerhour \
             -e DEPLOYMENT_BRANCH="$DEPLOYMENT_BRANCH" \
