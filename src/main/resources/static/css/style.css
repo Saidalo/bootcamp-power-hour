@@ -2,8 +2,6 @@
  * PowerHour shared stylesheet.
  * Every colour the app uses is declared here once. Pages use the classes
  * below and never invent their own colours or buttons.
- *
- * Lives at src/main/resources/static/css/style.css
  */
 
 :root {

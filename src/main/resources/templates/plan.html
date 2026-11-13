@@ -1,15 +1,16 @@
 <!--
-  Plan a run — the example page built on the shared shell.
-  Lives at src/main/resources/templates/plan.html
+  Plan a run.
 
   Model attributes it expects:
-    appliances  List<ApplianceDto>   the signed-in user's appliances
-    selectedId  Long                 the appliance currently chosen, may be null
-    day         String               "today" or "tomorrow"
-    slots       List<SlotView>       one per price slot: time, price, allowed, chosen
-    maxPrice    BigDecimal           the highest price in slots, for bar heights
-    window      CheapestWindow       the suggestion, may be null
-    error       String               a readable message, may be null
+    appliances   List<ApplianceResponse>  the signed-in user's appliances
+    selectedId   Long                     the appliance currently chosen, may be null
+    day          String                   "today" or "tomorrow"
+    slots        List<SlotView>           one per price slot: time, price, allowed, chosen
+    ticks        List<PriceTick>          horizontal lines of the price axis
+    window       CheapestWindow           the suggestion, may be null
+    startLabel, endLabel, durationLabel, energyLabel, costLabel
+                 String                   texts for the suggestion card
+    error        String                   a readable message, may be null
 -->
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">

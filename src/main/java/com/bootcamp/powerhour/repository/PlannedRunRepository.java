@@ -3,7 +3,6 @@ package com.bootcamp.powerhour.repository;
 import com.bootcamp.powerhour.entity.PlannedRun;
 import com.bootcamp.powerhour.entity.PlannedRunStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
