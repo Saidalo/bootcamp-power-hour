@@ -65,10 +65,6 @@ public class ApplianceController {
     }
 
     private String save(Long id, ApplianceForm form, BindingResult errors, Principal principal, Model model) {
-        if (form.getAllowedFrom() != null && form.getAllowedTo() != null
-                && !form.getAllowedFrom().isBefore(form.getAllowedTo())) {
-            errors.rejectValue("allowedTo", "order", "Must be later than Allowed from");
-        }
         if (errors.hasErrors()) {
             model.addAttribute("applianceId", id);
             return "appliance-form";

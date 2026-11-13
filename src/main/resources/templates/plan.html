@@ -1,15 +1,16 @@
 <!--
-  Plan a run — the example page built on the shared shell.
-  Lives at src/main/resources/templates/plan.html
+  Plan a run.
 
   Model attributes it expects:
-    appliances  List<ApplianceDto>   the signed-in user's appliances
-    selectedId  Long                 the appliance currently chosen, may be null
-    day         String               "today" or "tomorrow"
-    slots       List<SlotView>       one per price slot: time, price, allowed, chosen
-    maxPrice    BigDecimal           the highest price in slots, for bar heights
-    window      CheapestWindow       the suggestion, may be null
-    error       String               a readable message, may be null
+    appliances   List<ApplianceResponse>  the signed-in user's appliances
+    selectedId   Long                     the appliance currently chosen, may be null
+    day          String                   "today" or "tomorrow"
+    slots        List<SlotView>           one per price slot: time, price, allowed, chosen
+    ticks        List<PriceTick>          horizontal lines of the price axis
+    window       CheapestWindow           the suggestion, may be null
+    startLabel, endLabel, durationLabel, energyLabel, costLabel
+                 String                   texts for the suggestion card
+    error        String                   a readable message, may be null
 -->
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
@@ -54,23 +55,25 @@
     <div class="card" th:if="${slots != null and !slots.isEmpty()}">
         <h2 style="margin-top:0">Prices</h2>
 
-        <div class="chart">
-            <div th:each="s : ${slots}"
-                 class="slot"
-                 th:classappend="${!s.allowed} ? 'off' : (${s.chosen} ? 'chosen' : '')"
-                 th:title="|${s.time} — ${s.price} €/kWh|">
-                <div class="bar"
-                     th:style="|height:${s.heightPercent}%|"></div>
-            </div>
-        </div>
-
-        <div class="chart-axis">
-            <span th:each="s : ${slots}" th:text="${s.hourLabel}">00</span>
-        </div>
+        <div th:replace="~{fragments/price-chart :: chart(${slots}, ${ticks})}"></div>
 
         <p class="small muted" style="margin-top:10px">
             Pale bars are outside the window you allow for this appliance.
             The mint block is the cheapest run we found.
+        </p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+        <p style="margin:0">
+            <strong>&#9888; Electrical safety:</strong><br/>
+            Do not connect multiple high-power appliances to the same socket or extension lead.<br/>
+            Overloading electrical circuits can cause overheating and fire.
+        </p>
+    </div>
+
+    <div class="card error" th:if="${notice != null}">
+        <p style="margin:0" th:text="${notice}">
+            Prices or the time changed since you looked, so the cheapest window moved. Check it and confirm again.
         </p>
     </div>
 
@@ -84,6 +87,8 @@
         <form th:action="@{/plan}" method="post">
             <input type="hidden" name="applianceId" th:value="${selectedId}">
             <input type="hidden" name="day" th:value="${day}">
+            <input type="hidden" name="shownStartsAt" th:value="${window.startsAt}">
+            <input type="hidden" name="shownCost" th:value="${window.estimatedCost}">
             <button type="submit" class="btn btn-primary">Plan this run</button>
         </form>
     </div>

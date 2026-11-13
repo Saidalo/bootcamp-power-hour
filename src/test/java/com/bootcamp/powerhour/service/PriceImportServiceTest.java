@@ -17,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.math.BigDecimal;
@@ -115,5 +116,80 @@ public class PriceImportServiceTest {
     void importZone_shouldThrowWhenZoneUnknown() {
         assertThatThrownBy(() -> service.importZone("XX", DATE))
                 .isInstanceOf(ZoneNotFoundException.class);
+    }
+
+    @Test
+    void hasPrices_shouldBeFalseWhenDayIsIncomplete() {
+        when(priceRepository.countInRange(any(), any(), any())).thenReturn(24L);
+        assertThat(service.hasPrices(LocalDate.of(2026, 11, 11))).isFalse();
+    }
+
+    @Test
+    void hasPrices_shouldBeTrueWhenEveryZoneHasAFullDay() {
+        when(priceRepository.countInRange(any(), any(), any())).thenReturn(96L);
+        assertThat(service.hasPrices(LocalDate.of(2026, 11, 11))).isTrue();
+    }
+
+    @Test
+    void hasPrices_shouldExpect100SlotsOnTheDayClocksGoBack() {
+        // 25 October 2026: Baltic clocks go back one hour, so the local day has 25 hours = 100 slots
+        when(priceRepository.countInRange(any(), any(), any())).thenReturn(96L);
+        assertThat(service.hasPrices(LocalDate.of(2026, 10, 25))).isFalse();
+    }
+
+    @Test
+    void importZone_shouldMarkNotPublishedWhenProviderReturnsNoPrices() {
+        when(priceProvider.fetchDayAhead(BiddingZone.EE, DATE)).thenReturn(List.of());
+
+        PriceImport result = service.importZone("EE", DATE);
+
+        assertThat(result.getStatus()).isEqualTo(PriceImportStatus.NOT_PUBLISHED);
+        assertThat(result.getErrorMessage()).contains("Not published yet");
+        assertThat(result.getRecordsImported()).isZero();
+        verify(priceRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void importAllZones_shouldReportFailedWhenOneZoneFailsAndAnotherIsNotPublished() {
+        when(priceProvider.fetchDayAhead(BiddingZone.EE, DATE)).thenThrow(new PriceProviderException("timeout"));
+        when(priceProvider.fetchDayAhead(BiddingZone.LV, DATE)).thenReturn(List.of());
+        when(priceProvider.fetchDayAhead(BiddingZone.LT, DATE))
+                .thenReturn(List.of(new PricePoint(SLOT, new BigDecimal("0.050000"))));
+
+        PriceImport result = service.importAllZones(DATE);
+
+        assertThat(result.getStatus()).isEqualTo(PriceImportStatus.FAILED);
+        assertThat(result.getErrorMessage()).contains("EE: timeout").contains("Not published yet: [LV]");
+        assertThat(result.getRecordsImported()).isEqualTo(1);
+    }
+
+    @Test
+    void importZone_shouldRetryOnceWhenParallelImportInsertedTheSameRows() {
+        when(priceProvider.fetchDayAhead(BiddingZone.EE, DATE))
+                .thenReturn(List.of(new PricePoint(SLOT, new BigDecimal("0.042000"))));
+        when(priceRepository.saveAll(any()))
+                .thenThrow(new DataIntegrityViolationException("duplicate key"))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        PriceImport result = service.importZone("EE", DATE);
+
+        // the retry reads the rows again, so it updates them instead of inserting duplicates
+        verify(priceRepository, times(2)).findByBiddingZoneAndStartsAtBetween(BiddingZone.EE, SLOT, SLOT);
+        verify(priceRepository, times(2)).saveAll(any());
+        assertThat(result.getStatus()).isEqualTo(PriceImportStatus.SUCCESS);
+        assertThat(result.getRecordsImported()).isEqualTo(1);
+    }
+
+    @Test
+    void importZone_shouldLogFailedWhenRetryAlsoFails() {
+        when(priceProvider.fetchDayAhead(BiddingZone.EE, DATE))
+                .thenReturn(List.of(new PricePoint(SLOT, new BigDecimal("0.042000"))));
+        when(priceRepository.saveAll(any())).thenThrow(new DataIntegrityViolationException("duplicate key"));
+
+        PriceImport result = service.importZone("EE", DATE);
+
+        verify(priceRepository, times(2)).saveAll(any());
+        assertThat(result.getStatus()).isEqualTo(PriceImportStatus.FAILED);
+        assertThat(result.getErrorMessage()).contains("duplicate key");
     }
 }

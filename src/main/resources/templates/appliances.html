@@ -12,10 +12,11 @@
 
     <table>
       <thead>
-      <tr><th>Name</th><th>Power</th><th>Duration</th><th>Allowed window</th><th></th></tr>
+      <tr><th>Bidding zone</th><th>Name</th><th>Power</th><th>Duration</th><th>Allowed window</th><th></th></tr>
       </thead>
       <tbody>
       <tr th:each="a : ${appliances}">
+        <td th:text="${a.biddingZone}">LV</td>
         <td th:text="${a.name}">Dishwasher</td>
         <td th:text="|${a.powerKw.stripTrailingZeros().toPlainString()} kW|">2.2 kW</td>
         <td th:text="|${a.durationMinutes} min|">90 min</td>
@@ -23,7 +24,7 @@
         <td class="actions">
           <a class="btn btn-ghost btn-small" th:href="@{/appliances/{id}/edit(id=${a.id})}">Edit</a>
           <form th:action="@{/appliances/{id}/delete(id=${a.id})}" method="post"
-                onsubmit="return confirm('Delete this appliance and its planned runs?')">
+                onsubmit="return confirm('Delete this appliance?')">
             <button type="submit" class="btn btn-danger btn-small">Delete</button>
           </form>
         </td>

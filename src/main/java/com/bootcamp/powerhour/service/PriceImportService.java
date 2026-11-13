@@ -4,25 +4,23 @@ import com.bootcamp.powerhour.entity.BiddingZone;
 import com.bootcamp.powerhour.entity.ElectricityPrice;
 import com.bootcamp.powerhour.entity.PriceImport;
 import com.bootcamp.powerhour.entity.PriceImportStatus;
-import com.bootcamp.powerhour.exception.PriceProviderException;
 import com.bootcamp.powerhour.exception.ZoneNotFoundException;
 import com.bootcamp.powerhour.provider.PricePoint;
 import com.bootcamp.powerhour.provider.PriceProvider;
 import com.bootcamp.powerhour.repository.ElectricityPriceRepository;
 import com.bootcamp.powerhour.repository.PriceImportRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -34,6 +32,7 @@ public class PriceImportService {
     private final ElectricityPriceRepository priceRepository;
     private final PriceImportRepository importRepository;
     private final TransactionTemplate transactionTemplate;
+    private final ReentrantLock importLock = new ReentrantLock();
 
     public PriceImportService(PriceProvider priceProvider,
                               ElectricityPriceRepository priceRepository,
@@ -63,40 +62,54 @@ public class PriceImportService {
     }
 
     private PriceImport runImport(List<BiddingZone> zones, LocalDate date) {
-        PriceImport priceImport = new PriceImport();
-        priceImport.setStartedAt(OffsetDateTime.now());
-        priceImport.setStatus(PriceImportStatus.RUNNING);
-        priceImport.setRecordsImported(0);
-        priceImport.setPriceDate(date);
-        // one zone -> show it in the admin table; all zones -> leave empty
-        priceImport.setBiddingZone(zones.size() == 1 ? zones.get(0) : null);
-        priceImport = importRepository.save(priceImport);
+        importLock.lock();
+        try {
+            PriceImport priceImport = new PriceImport();
+            priceImport.setStartedAt(OffsetDateTime.now());
+            priceImport.setStatus(PriceImportStatus.RUNNING);
+            priceImport.setRecordsImported(0);
+            priceImport.setPriceDate(date);
+            // one zone -> show it in the admin table; all zones -> leave empty
+            priceImport.setBiddingZone(zones.size() == 1 ? zones.get(0) : null);
+            priceImport = importRepository.save(priceImport);
 
-        int sum = 0;
-        List<String> errors = new ArrayList<>();
-        List<BiddingZone> notPublished = new ArrayList<>();
-        for (BiddingZone zone : zones) {
-            try {
-                List<PricePoint> points = priceProvider.fetchDayAhead(zone, date);
-                if (points.isEmpty()) {
-                    log.info("Prices for {} {} not published yet", zone, date);
-                    notPublished.add(zone);
-                    continue;
+            int sum = 0;
+            List<String> errors = new ArrayList<>();
+            List<BiddingZone> notPublished = new ArrayList<>();
+            for (BiddingZone zone : zones) {
+                try {
+                    List<PricePoint> points = priceProvider.fetchDayAhead(zone, date);
+                    if (points.isEmpty()) {
+                        log.info("Prices for {} {} not published yet", zone, date);
+                        notPublished.add(zone);
+                        continue;
+                    }
+                    Integer saved = saveWithRetry(zone, points, date);
+                    sum += saved == null ? 0 : saved;
+                    log.info("Imported {} prices for {} {}", saved, zone, date);
+                } catch (RuntimeException e) {
+                    log.warn("Price import failed for {} {}: {}", zone, date, e.getMessage());
+                    errors.add(zone + ": " + e.getMessage());
                 }
-                Integer saved = transactionTemplate.execute(status -> savePrices(zone, points));
-                sum += saved == null ? 0 : saved;
-                log.info("Imported {} prices for {} {}", saved, zone, date);
-            } catch (RuntimeException e) {
-                log.warn("Price import failed for {} {}: {}", zone, date, e.getMessage());
-                errors.add(zone + ": " + e.getMessage());
             }
-        }
 
-        priceImport.setRecordsImported(sum);
-        priceImport.setFinishedAt(OffsetDateTime.now());
-        priceImport.setStatus(resolveStatus(errors, notPublished));
-        priceImport.setErrorMessage(buildMessage(errors, notPublished));
-        return importRepository.save(priceImport);
+            priceImport.setRecordsImported(sum);
+            priceImport.setFinishedAt(OffsetDateTime.now());
+            priceImport.setStatus(resolveStatus(errors, notPublished));
+            priceImport.setErrorMessage(buildMessage(errors, notPublished));
+            return importRepository.save(priceImport);
+        } finally {
+            importLock.unlock();
+        }
+    }
+
+    private Integer saveWithRetry(BiddingZone zone, List<PricePoint> points, LocalDate date) {
+        try {
+            return transactionTemplate.execute(status -> savePrices(zone, points));
+        } catch (DataIntegrityViolationException e) {
+            log.warn("Race detected for {} {}, retrying as update", zone, date);
+            return transactionTemplate.execute(status -> savePrices(zone, points));
+        }
     }
 
     // Updates prices that already exist and inserts new ones (no duplicates thanks to the unique constraint)
@@ -136,8 +149,10 @@ public class PriceImportService {
         ZoneId zone = ZoneId.of("Europe/Tallinn");
         OffsetDateTime from = date.atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime to = date.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+
+        long expectedSlots = Duration.between(from, to).toMinutes() / 15;
         for (BiddingZone biddingZone : BiddingZone.values()) {
-            if (!priceRepository.existsByBiddingZoneAndStartsAtGreaterThanEqualAndStartsAtLessThan(biddingZone, from, to)) {
+            if (priceRepository.countInRange(biddingZone, from, to) < expectedSlots) {
                 return false;
             }
         }

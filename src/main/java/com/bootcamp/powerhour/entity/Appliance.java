@@ -10,12 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalTime;
 
 @Entity
-@Table(
-        name = "appliances",
-        check = @CheckConstraint(
-                constraint = "allowed_from < allowed_to"
-        )
-)
+@Table(name = "appliances")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -59,4 +54,7 @@ public class Appliance {
 
     @Column(nullable = false)
     private LocalTime allowedTo;
+
+    @Column(nullable = false)
+    private boolean isActive;
 }

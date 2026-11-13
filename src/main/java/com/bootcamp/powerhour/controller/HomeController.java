@@ -1,5 +1,6 @@
 package com.bootcamp.powerhour.controller;
 
+import com.bootcamp.powerhour.entity.BiddingZone;
 import com.bootcamp.powerhour.entity.ElectricityPrice;
 import com.bootcamp.powerhour.entity.User;
 import com.bootcamp.powerhour.service.CurrentUserService;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.security.Principal;
 import java.util.List;
@@ -22,16 +24,18 @@ public class HomeController {
     private final PlannedRunService plannedRunService;
 
     @GetMapping("/")
-    public String home(Principal principal, Model model) {
+    public String home(Principal principal, @RequestParam(defaultValue = "EE") BiddingZone zone, Model model) {
         User user = currentUserService.get(principal);
-        List<ElectricityPrice> prices = priceService.pricesForDay(CurrentUserService.zoneOf(user), PowerHourTime.today());
+        List<ElectricityPrice> prices = priceService.pricesForDay(zone, PowerHourTime.today());
 
         priceService.cheapest(prices).ifPresent(cheapest -> {
             model.addAttribute("cheapestTime", PowerHourTime.time(cheapest.getStartsAt()));
             model.addAttribute("cheapestPrice", cheapest.getPriceEurKwh().setScale(4, java.math.RoundingMode.HALF_UP));
         });
         model.addAttribute("slots", priceService.toSlots(prices, null, null));
+        model.addAttribute("ticks", priceService.axisTicks(prices));
         model.addAttribute("nextRun", plannedRunService.nextPlanned(user.getId()).orElse(null));
+        model.addAttribute("selectedZone", zone);
         return "index";
     }
 }

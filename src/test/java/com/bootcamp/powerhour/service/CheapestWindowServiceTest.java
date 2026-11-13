@@ -56,6 +56,7 @@ public class CheapestWindowServiceTest {
         appliance.setDurationMinutes(120);
         appliance.setAllowedFrom(LocalTime.MIDNIGHT);
         appliance.setAllowedTo(LocalTime.MIDNIGHT);
+        appliance.setActive(true);
     }
 
     @Test

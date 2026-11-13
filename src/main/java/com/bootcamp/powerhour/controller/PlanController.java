@@ -18,11 +18,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Controller
@@ -86,16 +88,45 @@ public class PlanController {
             model.addAttribute("error", "Not enough prices left today. Try Tomorrow.");
         }
         model.addAttribute("slots", priceService.toSlots(prices, allowed, chosen));
+        model.addAttribute("ticks", priceService.axisTicks(prices));
         return "plan";
     }
 
-    /** The browser only says which appliance and day; the window and cost are recalculated here. */
+    static final String WINDOW_CHANGED =
+            "Prices or the time changed since you looked, so the cheapest window moved. Check it and confirm again.";
+
+    /**
+     * The window and cost are recalculated here, never taken from the browser. The form also sends
+     * the window the user saw: if the new result differs, nothing is saved and the user confirms again.
+     */
     @PostMapping("/plan")
-    public String save(@RequestParam Long applianceId, @RequestParam String day, Principal principal) {
+    public String save(@RequestParam Long applianceId, @RequestParam String day,
+                       @RequestParam(required = false) String shownStartsAt,
+                       @RequestParam(required = false) BigDecimal shownCost,
+                       Principal principal, RedirectAttributes redirect) {
         User user = currentUserService.get(principal);
         Appliance appliance = applianceService.getOwned(applianceId, user.getId());
-        plannedRunService.plan(appliance, findWindow(appliance, dateOf(day)));
+        CheapestWindow window = findWindow(appliance, dateOf(day));
+        if (!sameAsShown(window, shownStartsAt, shownCost)) {
+            redirect.addAttribute("applianceId", applianceId);
+            redirect.addAttribute("day", day);
+            redirect.addFlashAttribute("notice", WINDOW_CHANGED);
+            return "redirect:/plan";
+        }
+        plannedRunService.plan(appliance, window);
         return "redirect:/runs";
+    }
+
+    private static boolean sameAsShown(CheapestWindow window, String shownStartsAt, BigDecimal shownCost) {
+        if (shownStartsAt == null || shownCost == null) {
+            return false;
+        }
+        try {
+            return OffsetDateTime.parse(shownStartsAt).isEqual(window.startsAt())
+                    && shownCost.compareTo(window.estimatedCost()) == 0;
+        } catch (DateTimeParseException e) {
+            return false;
+        }
     }
 
     private CheapestWindow findWindow(Appliance appliance, LocalDate date) {

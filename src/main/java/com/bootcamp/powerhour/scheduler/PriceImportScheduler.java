@@ -28,8 +28,7 @@ public class PriceImportScheduler {
         this.priceImportService = priceImportService;
         this.clock = clock;
     }
-
-    @Scheduled(cron = "${elering.import-cron:0 0/15 14-16 * * *}", zone = "Europe/Tallinn")
+    @Scheduled(cron = "${elering.import-cron}", zone = "Europe/Tallinn")
     public void importTomorrowPrices(){
         LocalDate tomorrow = LocalDate.now(clock).plusDays(1);
         if (priceImportService.hasPrices(tomorrow)) {

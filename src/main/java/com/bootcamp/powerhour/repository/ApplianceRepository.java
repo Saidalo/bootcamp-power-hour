@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ApplianceRepository extends JpaRepository<Appliance, Long> {
-    List<Appliance> findAllByUserId(Long userId);
+    List<Appliance> findAllByUserIdAndIsActiveTrue(Long userId);
 }
