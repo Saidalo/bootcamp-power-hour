@@ -15,11 +15,7 @@ import java.util.Optional;
  */
 public interface PlannedRunRepository extends JpaRepository<PlannedRun, Long> {
 
-    List<PlannedRun> findByApplianceUserIdOrderByStartsAtDesc(long userId);
-
     Optional<PlannedRun> findByIdAndApplianceUserId(long id, long userId);
-
-    List<PlannedRun> findByApplianceIdAndStatus(long applianceId, PlannedRunStatus status);
 
     List<PlannedRun> findByApplianceUserIdOrderByStartsAtAsc(long userId);
 
