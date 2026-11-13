@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Fills made-up hourly prices for the last 30 days, today and tomorrow, so the UI works
+ * Fills made-up quarter hourly prices for the last 30 days, today and tomorrow, so the UI works
  * without Elering. Days that already have prices are left alone.
  * Turn it off with powerhour.sample-prices.enabled=false.
  */
@@ -29,11 +29,16 @@ import java.util.List;
 public class SamplePriceSeeder implements CommandLineRunner {
 
     /** A typical day in €/kWh: cheap at night, peaks in the morning and evening. */
-    private static final double[] HOURLY = {
-            0.045, 0.040, 0.036, 0.034, 0.035, 0.042, 0.070, 0.110, 0.130, 0.105, 0.085, 0.075,
-            0.070, 0.068, 0.072, 0.085, 0.110, 0.150, 0.180, 0.165, 0.130, 0.095, 0.070, 0.055
+    private static final double[] QUARTER_HOURLY = {
+            0.045, 0.044, 0.042, 0.041, 0.040, 0.039, 0.038, 0.037, 0.036, 0.035, 0.035, 0.035,
+            0.034, 0.034, 0.035, 0.035, 0.035, 0.037, 0.039, 0.040, 0.042, 0.049, 0.056, 0.063,
+            0.070, 0.080, 0.090, 0.100, 0.110, 0.115, 0.120, 0.125, 0.130, 0.124, 0.117, 0.111,
+            0.105, 0.100, 0.095, 0.090, 0.085, 0.083, 0.080, 0.077, 0.075, 0.074, 0.073, 0.071,
+            0.070, 0.070, 0.069, 0.069, 0.068, 0.069, 0.070, 0.071, 0.072, 0.075, 0.079, 0.082,
+            0.085, 0.091, 0.098, 0.104, 0.110, 0.120, 0.130, 0.140, 0.150, 0.158, 0.165, 0.172,
+            0.180, 0.176, 0.172, 0.169, 0.165, 0.156, 0.148, 0.139, 0.130, 0.121, 0.113, 0.104,
+            0.095, 0.089, 0.083, 0.076, 0.070, 0.066, 0.062, 0.059, 0.055, 0.052, 0.050
     };
-
     private final ElectricityPriceRepository priceRepository;
 
     @Override
@@ -63,11 +68,11 @@ public class SamplePriceSeeder implements CommandLineRunner {
             case LT -> 1.02;
         };
         List<ElectricityPrice> prices = new ArrayList<>();
-        for (int hour = 0; hour < 24; hour++) {
+        for (int i = 0; i < QUARTER_HOURLY.length; i++) {
             ElectricityPrice price = new ElectricityPrice();
             price.setBiddingZone(zone);
-            price.setStartsAt(start.plusHours(hour));
-            price.setPriceEurKwh(BigDecimal.valueOf(HOURLY[hour] * dayFactor * zoneFactor)
+            price.setStartsAt(start.plusMinutes(i * 15L));
+            price.setPriceEurKwh(BigDecimal.valueOf(QUARTER_HOURLY [i] * dayFactor * zoneFactor)
                     .setScale(6, RoundingMode.HALF_UP));
             prices.add(price);
         }
