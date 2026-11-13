@@ -162,6 +162,8 @@ jobs:
           STARTUP_SLEEP_SECONDS: ${{ github.event.inputs.startup_sleep_seconds || '5' }}
           APP_IMAGE_TAG: ${{ env.APP_IMAGE_NAME }}:${{ steps.deployment-info.outputs.commit }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          SEED_USER_PASSWORD: ${{ secrets.SEED_USER_PASSWORD }}
         run: |
           docker run -d \
             --name $APP_CONTAINER_NAME \
@@ -170,6 +172,12 @@ jobs:
             -p $SERVER_PORT:$SERVER_PORT \
             -e DB_USERNAME="$DB_USERNAME" \
             -e DB_PASSWORD="$DB_PASSWORD" \
+            -e SEED_ADMIN_USERNAME=admin \
+            -e SEED_ADMIN_EMAIL=admin@powerhour.lv \
+            -e SEED_ADMIN_PASSWORD="$SEED_ADMIN_PASSWORD" \
+            -e SEED_USER_USERNAME=user \
+            -e SEED_USER_EMAIL=user@powerhour.lv \
+            -e SEED_USER_PASSWORD="$SEED_USER_PASSWORD" \
             -e SERVER_PORT=$SERVER_PORT \
             -e SPRING_DATASOURCE_URL=jdbc:postgresql://$DB_CONTAINER_NAME:5432/powerhour \
             -e DEPLOYMENT_BRANCH="$DEPLOYMENT_BRANCH" \
