@@ -17,6 +17,11 @@ on:
         description: 'Seconds to wait after starting the container'
         required: false
         default: '5'
+      reset_db:
+        description: 'DELETE all database data and recreate the DB container'
+        type: boolean
+        required: false
+        default: false
 
 concurrency:
   group: deploy-team-3
@@ -100,6 +105,13 @@ jobs:
             -t $APP_IMAGE_TAG \
             -t $APP_IMAGE_NAME:latest \
             .
+
+      - name: Reset database (only when reset_db is ticked)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.reset_db == 'true' }}
+        run: |
+          echo "Deleting app container, DB container and DB volume"
+          docker rm -f $APP_CONTAINER_NAME $DB_CONTAINER_NAME || true
+          docker volume rm acn-power-hour-team-3-pgdata || true
 
       - name: Start Postgres (if not running)
         env:
