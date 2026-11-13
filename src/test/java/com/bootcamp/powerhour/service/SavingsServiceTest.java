@@ -8,7 +8,6 @@ import com.bootcamp.powerhour.entity.PlannedRun;
 import com.bootcamp.powerhour.entity.PlannedRunStatus;
 import com.bootcamp.powerhour.repository.PlannedRunRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -199,7 +198,6 @@ class SavingsServiceTest {
         assertThat(summary.energyKwh().scale()).isEqualTo(1);
     }
 
-    @Disabled("Turn on after SavingsService reads energyKwh from the run (mentor review)")
     @Test
     void usesTheEnergyStoredOnTheRunNotTheEditedAppliance() {
         givenCompletedRuns(completedRun(START, "0.40"));
@@ -213,7 +211,6 @@ class SavingsServiceTest {
         assertThat(summary.atAverage()).isEqualByComparingTo("1.00");
     }
 
-    @Disabled("Turn on after SavingsService reads the bidding zone from the run (mentor review)")
     @Test
     void usesTheZoneStoredOnTheRunNotTheMovedAppliance() {
         givenCompletedRuns(completedRun(START, "0.40"));

@@ -1,7 +1,6 @@
 package com.bootcamp.powerhour.service;
 
 import com.bootcamp.powerhour.dto.SavingsSummary;
-import com.bootcamp.powerhour.entity.Appliance;
 import com.bootcamp.powerhour.entity.ElectricityPrice;
 import com.bootcamp.powerhour.entity.PlannedRun;
 import com.bootcamp.powerhour.entity.PlannedRunStatus;
@@ -42,15 +41,14 @@ public class SavingsService {
         int withoutPrices = 0;
 
         for (PlannedRun run : runs) {
-            Appliance appliance = run.getAppliance();
+            // zone and energy are read from the run, so editing the appliance later can't change history
             List<ElectricityPrice> prices = priceService.pricesForDay(
-                    appliance.getBiddingZone(), PowerHourTime.localDate(run.getStartsAt()));
+                    run.getBiddingZone(), PowerHourTime.localDate(run.getStartsAt()));
             if (prices.isEmpty()) {
                 withoutPrices++;
                 continue;
             }
-            BigDecimal kwh = appliance.getPowerKw().multiply(BigDecimal.valueOf(appliance.getDurationMinutes()))
-                    .divide(BigDecimal.valueOf(60), 6, RoundingMode.HALF_UP);
+            BigDecimal kwh = run.getEnergyKwh();
             BigDecimal average = prices.stream().map(ElectricityPrice::getPriceEurKwh)
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                     .divide(BigDecimal.valueOf(prices.size()), 6, RoundingMode.HALF_UP);
